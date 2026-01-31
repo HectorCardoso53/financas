@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finanças Pessoais - Controle Completo 💰</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="app-header">
+            <div class="header-left">
+                <h1 id="logo">💰 Finanças Pessoais</h1>
+                <p id="userEmail">Carregando usuário...</p>
+            </div>
+
+            <div class="header-right">
+                <button id="logoutBtn" class="btn btn-secondary">
+                    Sair
+                </button>
+            </div>
+        </header>
+
+
+        <div class="section" style="margin-bottom: 20px;">
+            <h2>📅 Filtro</h2>
+
+            <div class="main-content">
+                <div class="form-group">
+                    <label for="filterMonth">Mês</label>
+                    <select id="filterMonth">
+                        <option value="">Todos</option>
+                        <option value="0">Janeiro</option>
+                        <option value="1">Fevereiro</option>
+                        <option value="2">Março</option>
+                        <option value="3">Abril</option>
+                        <option value="4">Maio</option>
+                        <option value="5">Junho</option>
+                        <option value="6">Julho</option>
+                        <option value="7">Agosto</option>
+                        <option value="8">Setembro</option>
+                        <option value="9">Outubro</option>
+                        <option value="10">Novembro</option>
+                        <option value="11">Dezembro</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="filterYear">Ano</label>
+                    <select id="filterYear"></select>
+                </div>
+            </div>
+        </div>
+        <!-- Dashboard de Resumo -->
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Receitas</h3>
+                    <span class="card-icon">💵</span>
+                </div>
+                <div class="card-value income" id="totalIncome">R$ 0,00</div>
+                <div class="card-label">Total de entradas</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Despesas</h3>
+                    <span class="card-icon">💸</span>
+                </div>
+                <div class="card-value expense" id="totalExpense">R$ 0,00</div>
+                <div class="card-label">Total de saídas</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Lucro</h3>
+                    <span class="card-icon">📈</span>
+                </div>
+                <div class="card-value profit" id="totalProfit" title="Clique 5x rápido!">R$ 0,00</div>
+                <div class="card-label">Receitas - Despesas</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Saldo</h3>
+                    <span class="card-icon">💎</span>
+                </div>
+                <div class="card-value balance" id="currentBalance">R$ 0,00</div>
+                <div class="card-label">Saldo atual</div>
+            </div>
+        </div>
+
+        <!-- Conteúdo Principal -->
+        <div class="main-content">
+            <!-- Adicionar Receita -->
+            <div class="section">
+                <h2>➕ Adicionar Receita</h2>
+                <form id="incomeForm">
+                    <div class="form-group">
+                        <label for="incomeDescription">Descrição</label>
+                        <input type="text" id="incomeDescription" placeholder="Ex: Salário, Freelance..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="incomeAmount">Valor (R$)</label>
+                        <input type="number" id="incomeAmount" placeholder="0.00" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="incomeCategory">Categoria</label>
+                        <select id="incomeCategory" required>
+                            <option value="salario">💼 Salário</option>
+                            <option value="freelance">💻 Freelance</option>
+                            <option value="investimentos">📊 Investimentos</option>
+                            <option value="outros">🎯 Outros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="incomeDate">Data</label>
+                        <input type="date" id="incomeDate" required>
+                    </div>
+                    <button type="submit" class="btn">Adicionar Receita</button>
+                </form>
+            </div>
+
+            <!-- Adicionar Despesa -->
+            <div class="section">
+                <h2>➖ Adicionar Despesa</h2>
+                <form id="expenseForm">
+                    <div class="form-group">
+                        <label for="expenseDescription">Descrição</label>
+                        <input type="text" id="expenseDescription" placeholder="Ex: Supermercado, Aluguel..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseAmount">Valor (R$)</label>
+                        <input type="number" id="expenseAmount" placeholder="0.00" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseCategory">Categoria</label>
+                        <select id="expenseCategory" required>
+                            <option value="alimentacao">🍔 Alimentação</option>
+                            <option value="transporte">🚗 Transporte</option>
+                            <option value="moradia">🏠 Moradia</option>
+                            <option value="lazer">🎮 Lazer</option>
+                            <option value="saude">💊 Saúde</option>
+                            <option value="educacao">📚 Educação</option>
+                            <option value="outros">📦 Outros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseDate">Data</label>
+                        <input type="date" id="expenseDate" required>
+                    </div>
+                    <button type="submit" class="btn">Adicionar Despesa</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de Transações -->
+        <div class="main-content">
+            <div class="section">
+                <h2>📊 Histórico de Receitas</h2>
+                <div class="transaction-list" id="incomeList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p>Nenhuma receita registrada ainda</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📊 Histórico de Despesas</h2>
+                <div class="transaction-list" id="expenseList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p>Nenhuma despesa registrada ainda</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Easter Egg Hint -->
+    <div class="easter-egg-hint">
+        💡 Dica: Tente clicar 3x no logo ou 5x no lucro!
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+
+
+</body>
+
+</html>
