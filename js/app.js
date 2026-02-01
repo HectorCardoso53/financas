@@ -433,16 +433,7 @@ function renderYearlyComparisonChart(year) {
 }
 
 
-function getChartMetrics() {
-    const inc = filterByDate(incomes);
-    const exp = filterByDate(expenses);
 
-    const totalIncome = inc.reduce((s, i) => s + i.amount, 0);
-    const totalExpense = exp.reduce((s, e) => s + e.amount, 0);
-    const profit = totalIncome - totalExpense;
-
-    return { totalIncome, totalExpense, profit };
-}
 
 
 const openChartBtn = document.getElementById('openChartBtn');
@@ -748,24 +739,30 @@ function triggerKonamiSecret() {
         secret.remove();
     }, 6000);
 }
-
 function populateYears() {
-  const currentYear = new Date().getFullYear();
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth(); // 0 a 11
 
-  // Começa em 2026 e já seleciona 2026
+  // Preenche anos (ex: de 2020 até +5 anos)
   filterYear.innerHTML = '';
 
-  for (let y = 2026; y <= currentYear + 5; y++) {
+  for (let y = currentYear - 5; y <= currentYear + 5; y++) {
     filterYear.innerHTML += `<option value="${y}">${y}</option>`;
   }
 
-  // 🔥 seleciona 2026 por padrão
-  selectedYear = '2026';
-  filterYear.value = '2026';
+  // 👉 seleciona ANO ATUAL
+  selectedYear = currentYear.toString();
+  filterYear.value = selectedYear;
+
+  // 👉 seleciona MÊS ATUAL
+  selectedMonth = currentMonth.toString();
+  filterMonth.value = selectedMonth;
 
   updateDashboard();
   renderTransactions();
 }
+
 
 
 const filterYear = document.getElementById('filterYear');

@@ -804,3 +804,122 @@ header h1:hover {
   transform: scale(1.03);
   opacity: .95;
 }
+
+
+/* ===============================
+   📱 MOBILE FIRST AJUSTES
+================================ */
+@media (max-width: 600px) {
+
+  body {
+    padding: 12px;
+  }
+
+  /* Header */
+  .app-header {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .header-left h1 {
+    font-size: 1.6em;
+  }
+
+  #userEmail {
+    font-size: 0.85em;
+  }
+
+  /* Dashboard cards */
+  .dashboard {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .card {
+    padding: 18px;
+  }
+
+  .card-value {
+    font-size: 2em;
+  }
+
+  /* Seções principais */
+  .main-content {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .section {
+    padding: 18px;
+  }
+
+  .section h2 {
+    font-size: 1.25em;
+  }
+
+  /* Formulários */
+  .form-group input,
+  .form-group select {
+    padding: 14px;
+    font-size: 1em;
+  }
+
+  .btn {
+    padding: 14px;
+    font-size: 1em;
+  }
+
+  /* Listas */
+  .transaction-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .transaction-amount {
+    margin: 0;
+    font-size: 1.1em;
+  }
+
+  .btn-delete {
+    align-self: flex-end;
+  }
+
+  /* Modais */
+  .chart-card {
+    width: 95%;
+    padding: 14px;
+  }
+
+  .chart-body {
+    height: 280px;
+  }
+
+  /* 🤖 Robô */
+  .robot-content {
+    width: 95%;
+    padding: 18px;
+  }
+
+  #robotText {
+    font-size: 0.9em;
+  }
+
+  /* 🎛️ Barra flutuante */
+  .action-bar {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .action-btn {
+    width: 52px;
+    height: 52px;
+    font-size: 24px;
+  }
+
+  .robot-btn {
+    font-size: 38px;
+  }
+}
