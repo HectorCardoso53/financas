@@ -10,6 +10,33 @@ import {
     deleteDoc,
     doc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  Chart,
+  BarController,
+  BarElement,
+  LineController,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend
+} from "https://cdn.jsdelivr.net/npm/chart.js@4.4.1/+esm";
+
+
+
+
+Chart.register(
+  BarController,
+  BarElement,
+  LineController,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend
+);
 
 
 const firebaseConfig = {
@@ -27,6 +54,8 @@ const auth = getAuth(app);
 
 const db = getFirestore(app);
 let currentUserId = null;
+let financeChart = null;
+
 
 
 // Proteção de rota
@@ -36,12 +65,13 @@ onAuthStateChanged(auth, (user) => {
     } else {
         currentUserId = user.uid;
 
-        // 👇 MOSTRAR EMAIL
         document.getElementById('userEmail').textContent = user.email;
 
+        populateYears(); // 👈 AQUI
         loadData();
     }
 });
+
 
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -71,13 +101,12 @@ async function loadData() {
 }
 
 
-
 let incomes = [];
 let expenses = [];
 
-
 let selectedMonth = '';
 let selectedYear = '';
+
 
 
 // Easter Eggs Variables
@@ -136,32 +165,142 @@ document.getElementById('expenseForm').addEventListener('submit', async (e) => {
 });
 
 
-function getMonthYear(dateString) {
-    const d = new Date(dateString);
+
+function analyzeYear(year) {
+    const yearIncomes = incomes.filter(i => {
+        return new Date(i.date).getFullYear() === year;
+    });
+
+    const yearExpenses = expenses.filter(e => {
+        return new Date(e.date).getFullYear() === year;
+    });
+
+    const totalIncome = yearIncomes.reduce((s, i) => s + i.amount, 0);
+    const totalExpense = yearExpenses.reduce((s, e) => s + e.amount, 0);
+
     return {
-        month: d.getMonth(),
-        year: d.getFullYear()
+        totalIncome,
+        totalExpense,
+        balance: totalIncome - totalExpense
     };
 }
 
 
-// Deletar Transação
-async function deleteTransaction(id, type) {
-    if (!confirm("Deseja realmente excluir?")) return;
+function generateAISuggestionByYear(year) {
+  const data = analyzeYear(year);
 
-    const ref = doc(
-        db,
-        "users",
-        currentUserId,
-        type === "income" ? "incomes" : "expenses",
-        id
-    );
+  if (data.totalIncome === 0 && data.totalExpense === 0) {
+    return `🤖 Olá! Analisei ${year} e não encontrei movimentações financeiras ainda.
 
-    await deleteDoc(ref);
-    loadData();
+💡 Dica: registre suas receitas e despesas para eu conseguir te ajudar melhor 😉`;
+  }
+
+  const expenseRatio = data.totalExpense / data.totalIncome;
+
+  let message = `📅 Análise financeira de ${year}\n\n`;
+  message += `💰 Receita total: ${formatCurrency(data.totalIncome)}\n`;
+  message += `💸 Despesas totais: ${formatCurrency(data.totalExpense)}\n`;
+  message += `📊 Saldo final: ${formatCurrency(data.balance)}\n\n`;
+
+  if (expenseRatio > 0.9) {
+    message += `⚠️ Atenção!\nSeus gastos estão muito próximos da sua renda.\n\n👉 Sugestão: tente reduzir despesas em pelo menos 15% para evitar apertos.`;
+  } 
+  else if (expenseRatio > 0.7) {
+    message += `🟡 Situação controlada.\nVocê está indo bem, mas ainda dá para melhorar.\n\n👉 Tente guardar 10% da sua renda mensal.`;
+  } 
+  else {
+    message += `🟢 Excelente controle financeiro!\nVocê gasta bem menos do que ganha.\n\n🚀 Sugestão: invista cerca de 20% do valor que sobra.`;
+  }
+
+  return message;
+}
+
+function analyzeMonthYear(month, year) {
+  const monthIncomes = incomes.filter(i => {
+    const d = new Date(i.date);
+    return d.getFullYear() === year && d.getMonth() === month;
+  });
+
+  const monthExpenses = expenses.filter(e => {
+    const d = new Date(e.date);
+    return d.getFullYear() === year && d.getMonth() === month;
+  });
+
+  const totalIncome = monthIncomes.reduce((s, i) => s + i.amount, 0);
+  const totalExpense = monthExpenses.reduce((s, e) => s + e.amount, 0);
+
+  return {
+    totalIncome,
+    totalExpense,
+    balance: totalIncome - totalExpense
+  };
 }
 
 
+
+function generateAISuggestion() {
+  // 👉 Caso nenhum ano esteja selecionado
+  if (selectedYear === '') {
+    return `⚠️ Selecione um ANO para que eu possa analisar suas finanças 🤖`;
+  }
+
+  // 👉 Caso tenha mês + ano
+  if (selectedMonth !== '') {
+    const month = parseInt(selectedMonth);
+    const year = parseInt(selectedYear);
+    const data = analyzeMonthYear(month, year);
+
+    const monthNames = [
+      'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+      'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
+    ];
+
+    if (data.totalIncome === 0 && data.totalExpense === 0) {
+      return `📭 Não encontrei movimentações em ${monthNames[month]} de ${year}.
+
+💡 Dica: registre suas despesas e receitas para eu te ajudar melhor 😉`;
+    }
+
+    const ratio = data.totalExpense / (data.totalIncome || 1);
+
+    let msg = `📅 Análise de ${monthNames[month]} / ${year}\n\n`;
+    msg += `💰 Receitas: ${formatCurrency(data.totalIncome)}\n`;
+    msg += `💸 Despesas: ${formatCurrency(data.totalExpense)}\n`;
+    msg += `📊 Resultado: ${formatCurrency(data.balance)}\n\n`;
+
+    if (ratio > 0.9) {
+      msg += `⚠️ Alerta!\nVocê gastou quase tudo que ganhou neste mês.\n👉 Tente reduzir gastos no próximo mês.`;
+    } else if (ratio > 0.7) {
+      msg += `🟡 Atenção moderada.\nSeus gastos estão controlados, mas podem melhorar.\n👉 Guarde pelo menos 10%.`;
+    } else {
+      msg += `🟢 Excelente!\nÓtimo controle financeiro neste mês.\n🚀 Considere investir parte do que sobrou.`;
+    }
+
+    return msg;
+  }
+
+  // 👉 Caso tenha só o ano
+  const year = parseInt(selectedYear);
+  return generateAISuggestionByYear(year);
+}
+
+
+
+const robot = document.getElementById("robotCoach");
+
+robot.addEventListener("click", () => {
+  const text = document.getElementById("robotText");
+
+  // 🤖 agora analisa mês + ano automaticamente
+  text.innerText = generateAISuggestion();
+
+  document.getElementById("robotModal").classList.remove("hidden");
+});
+
+
+window.closeRobot = function () {
+  document.getElementById("robotModal").classList.add("hidden");
+};
 
 
 // Atualizar Dashboard
@@ -190,6 +329,152 @@ function filterByDate(list) {
         return matchMonth && matchYear;
     });
 }
+function renderYearlyComparisonChart(year) {
+  const canvas = document.getElementById('financeChart');
+  if (!canvas) return;
+
+  if (financeChart) {
+    financeChart.destroy();
+  }
+
+  const ctx = canvas.getContext('2d');
+
+  // 🎨 Gradientes
+  const incomeGradient = ctx.createLinearGradient(0, 0, 0, 400);
+  incomeGradient.addColorStop(0, 'rgba(34,197,94,0.4)');
+  incomeGradient.addColorStop(1, 'rgba(34,197,94,0)');
+
+  const expenseGradient = ctx.createLinearGradient(0, 0, 0, 400);
+  expenseGradient.addColorStop(0, 'rgba(239,68,68,0.4)');
+  expenseGradient.addColorStop(1, 'rgba(239,68,68,0)');
+
+  const incomeByMonth = Array(12).fill(0);
+  const expenseByMonth = Array(12).fill(0);
+
+  incomes.forEach(i => {
+    const d = new Date(i.date);
+    if (d.getFullYear() === year) {
+      incomeByMonth[d.getMonth()] += i.amount;
+    }
+  });
+
+  expenses.forEach(e => {
+    const d = new Date(e.date);
+    if (d.getFullYear() === year) {
+      expenseByMonth[d.getMonth()] += e.amount;
+    }
+  });
+
+  financeChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
+      datasets: [
+        {
+          label: 'Receitas',
+          data: incomeByMonth,
+          borderColor: '#22c55e',
+          backgroundColor: incomeGradient,
+          fill: true,
+          tension: 0.45,
+          borderWidth: 3,
+          pointRadius: 5,
+          pointBackgroundColor: '#22c55e'
+        },
+        {
+          label: 'Despesas',
+          data: expenseByMonth,
+          borderColor: '#ef4444',
+          backgroundColor: expenseGradient,
+          fill: true,
+          tension: 0.45,
+          borderWidth: 3,
+          pointRadius: 5,
+          pointBackgroundColor: '#ef4444'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            usePointStyle: true,
+            padding: 20,
+            font: { size: 14 }
+          }
+        },
+        tooltip: {
+          backgroundColor: '#111827',
+          padding: 12,
+          callbacks: {
+            label: ctx => formatCurrency(ctx.raw)
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false }
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: '#e5e7eb'
+          },
+          ticks: {
+            callback: v => formatCurrency(v)
+          }
+        }
+      }
+    }
+  });
+}
+
+
+function getChartMetrics() {
+    const inc = filterByDate(incomes);
+    const exp = filterByDate(expenses);
+
+    const totalIncome = inc.reduce((s, i) => s + i.amount, 0);
+    const totalExpense = exp.reduce((s, e) => s + e.amount, 0);
+    const profit = totalIncome - totalExpense;
+
+    return { totalIncome, totalExpense, profit };
+}
+
+
+const openChartBtn = document.getElementById('openChartBtn');
+const chartModal = document.getElementById('chartModal');
+
+if (openChartBtn && chartModal) {
+  openChartBtn.addEventListener('click', () => {
+  if (selectedYear === '') {
+    alert('Selecione um ANO para ver o resumo anual 📅');
+    return;
+  }
+
+  chartModal.classList.remove('hidden');
+
+  // ⏱️ espera o modal aparecer na tela
+  setTimeout(() => {
+    renderYearlyComparisonChart(parseInt(selectedYear));
+  }, 50);
+});
+
+}
+
+
+window.closeChart = function () {
+  chartModal.classList.add('hidden');
+
+  if (financeChart) {
+    financeChart.destroy();
+    financeChart = null;
+  }
+};
+
 
 
 // Renderizar Transações
@@ -227,9 +512,11 @@ function renderTransactions() {
                     <div class="transaction-amount income">
                         +${formatCurrency(item.amount)}
                     </div>
-                    <button class="btn btn-delete" onclick="deleteTransaction(${item.id}, 'income')">
-                        🗑️
-                    </button>
+                    <button class="btn btn-delete"
+  onclick="deleteTransaction('${item.id}', 'income')">
+  🗑️
+</button>
+
                 </div>
             `)
             .join('');
@@ -264,14 +551,18 @@ function renderTransactions() {
                     <div class="transaction-amount expense">
                         -${formatCurrency(item.amount)}
                     </div>
-                    <button class="btn btn-delete" onclick="deleteTransaction(${item.id}, 'expense')">
-                        🗑️
-                    </button>
+                    <button class="btn btn-delete"
+  onclick="deleteTransaction('${item.id}', 'expense')">
+  🗑️
+</button>
+
                 </div>
             `)
             .join('');
     }
 }
+
+
 
 
 // Utilitários
@@ -312,25 +603,8 @@ function getCategoryName(category, type) {
     return categories[type][category] || category;
 }
 
-// ============= EASTER EGGS =============
 
-// 1. Chuva de Moedas
-function triggerCoinRain() {
-    const coins = ['💰', '🪙', '💵', '💴', '💶', '💷', '💸'];
 
-    for (let i = 0; i < 40; i++) {
-        setTimeout(() => {
-            const coin = document.createElement('div');
-            coin.className = 'coin';
-            coin.textContent = coins[Math.floor(Math.random() * coins.length)];
-            coin.style.left = Math.random() * 100 + 'vw';
-            coin.style.top = '-50px';
-            document.body.appendChild(coin);
-
-            setTimeout(() => coin.remove(), 2000);
-        }, i * 80);
-    }
-}
 
 // 2. Modo STONKS (3 cliques no logo)
 document.getElementById('logo').addEventListener('click', () => {
@@ -370,17 +644,6 @@ function triggerStonksMode() {
     }, 4000);
 }
 
-// 3. Foguete do Lucro
-function triggerRocket() {
-    const rocket = document.createElement('div');
-    rocket.className = 'rocket';
-    rocket.textContent = '🚀';
-    rocket.style.left = '50%';
-    rocket.style.bottom = '-100px';
-    document.body.appendChild(rocket);
-
-    setTimeout(() => rocket.remove(), 3000);
-}
 
 // 4. Mensagem Secreta (5 cliques no lucro)
 document.getElementById('totalProfit').addEventListener('click', () => {
@@ -485,19 +748,39 @@ function triggerKonamiSecret() {
         secret.remove();
     }, 6000);
 }
+
 function populateYears() {
-    const yearSelect = document.getElementById('filterYear');
-    const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
 
-    yearSelect.innerHTML = '<option value="">Todos</option>';
+  // Começa em 2026 e já seleciona 2026
+  filterYear.innerHTML = '';
 
-    for (let y = currentYear - 5; y <= currentYear + 5; y++) {
-        const option = document.createElement('option');
-        option.value = y;
-        option.textContent = y;
-        yearSelect.appendChild(option);
-    }
+  for (let y = 2026; y <= currentYear + 5; y++) {
+    filterYear.innerHTML += `<option value="${y}">${y}</option>`;
+  }
+
+  // 🔥 seleciona 2026 por padrão
+  selectedYear = '2026';
+  filterYear.value = '2026';
+
+  updateDashboard();
+  renderTransactions();
 }
+
+
+const filterYear = document.getElementById('filterYear');
+const filterMonth = document.getElementById('filterMonth');
+
+filterYear.addEventListener('change', (e) => {
+  selectedYear = e.target.value;
+
+  console.log('Ano selecionado:', selectedYear);
+
+  updateDashboard();
+  renderTransactions();
+});
+
+
 
 document.getElementById('filterMonth').addEventListener('change', (e) => {
     selectedMonth = e.target.value;
@@ -505,69 +788,31 @@ document.getElementById('filterMonth').addEventListener('change', (e) => {
     renderTransactions();
 });
 
-document.getElementById('filterYear').addEventListener('change', (e) => {
-    selectedYear = e.target.value;
-    updateDashboard();
-    renderTransactions();
-});
 
 
-function updateComparison() {
-    if (selectedMonth === '' || selectedYear === '') {
-        document.getElementById('compareIncome').textContent = 'Selecione mês e ano';
-        document.getElementById('compareExpense').textContent = '-';
-        document.getElementById('compareBalance').textContent = '-';
-        return;
-    }
 
-    const month = parseInt(selectedMonth);
-    const year = parseInt(selectedYear);
 
-    // Mês atual
-    const currentIncomes = incomes.filter(i => {
-        const d = getMonthYear(i.date);
-        return d.month === month && d.year === year;
-    });
+async function deleteTransaction(id, type) {
+    if (!confirm("Deseja realmente excluir?")) return;
 
-    const currentExpenses = expenses.filter(e => {
-        const d = getMonthYear(e.date);
-        return d.month === month && d.year === year;
-    });
+    const ref = doc(
+        db,
+        "users",
+        currentUserId,
+        type === "income" ? "incomes" : "expenses",
+        id
+    );
 
-    // Mês anterior
-    let prevMonth = month - 1;
-    let prevYear = year;
-
-    if (prevMonth < 0) {
-        prevMonth = 11;
-        prevYear--;
-    }
-
-    const prevIncomes = incomes.filter(i => {
-        const d = getMonthYear(i.date);
-        return d.month === prevMonth && d.year === prevYear;
-    });
-
-    const prevExpenses = expenses.filter(e => {
-        const d = getMonthYear(e.date);
-        return d.month === prevMonth && d.year === prevYear;
-    });
-
-    const curIncomeTotal = currentIncomes.reduce((s, i) => s + i.amount, 0);
-    const curExpenseTotal = currentExpenses.reduce((s, e) => s + e.amount, 0);
-
-    const prevIncomeTotal = prevIncomes.reduce((s, i) => s + i.amount, 0);
-    const prevExpenseTotal = prevExpenses.reduce((s, e) => s + e.amount, 0);
-
-    const curBalance = curIncomeTotal - curExpenseTotal;
-    const prevBalance = prevIncomeTotal - prevExpenseTotal;
-
-    updateCompareUI('compareIncome', curIncomeTotal - prevIncomeTotal);
-    updateCompareUI('compareExpense', curExpenseTotal - prevExpenseTotal);
-    updateCompareUI('compareBalance', curBalance - prevBalance);
+    await deleteDoc(ref);
+    loadData();
 }
 
+window.deleteTransaction = deleteTransaction;
 
-populateYears();
+
+updateDashboard();
+renderTransactions();
+
+
 
 

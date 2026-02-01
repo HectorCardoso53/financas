@@ -24,7 +24,6 @@
             </div>
         </header>
 
-
         <div class="section" style="margin-bottom: 20px;">
             <h2>📅 Filtro</h2>
 
@@ -32,7 +31,6 @@
                 <div class="form-group">
                     <label for="filterMonth">Mês</label>
                     <select id="filterMonth">
-                        <option value="">Todos</option>
                         <option value="0">Janeiro</option>
                         <option value="1">Fevereiro</option>
                         <option value="2">Março</option>
@@ -92,6 +90,9 @@
                 <div class="card-label">Saldo atual</div>
             </div>
         </div>
+
+
+
 
         <!-- Conteúdo Principal -->
         <div class="main-content">
@@ -187,6 +188,42 @@
     </div>
 
     <script type="module" src="js/app.js"></script>
+
+    <!-- 🎛️ Barra fixa de ações -->
+    <div class="action-bar">
+
+        <button id="openChartBtn" class="action-btn chart-btn" title="Resumo anual">
+            📈
+        </button>
+
+        <div id="robotCoach" class="action-btn robot-btn" title="Modo Coach Financeiro 🤖">
+            🤖
+        </div>
+
+    </div>
+
+
+    <!-- Modal do robô -->
+    <div id="robotModal" class="robot-modal hidden">
+        <div class="robot-content">
+            <h3>🤖 Coach Financeiro</h3>
+            <p id="robotText"></p>
+            <button onclick="closeRobot()">Fechar</button>
+        </div>
+    </div>
+
+    <!-- 📈 Modal do gráfico anual -->
+    <div id="chartModal" class="chart-modal hidden">
+        <div class="chart-card">
+            <div class="chart-header">
+                📈 Comparativo Anual
+                <button onclick="closeChart()">✕</button>
+            </div>
+            <div class="chart-body">
+                <canvas id="financeChart"></canvas>
+            </div>
+        </div>
+    </div>
 
 
 </body>
