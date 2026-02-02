@@ -25,7 +25,6 @@ import {
 
 
 
-
 Chart.register(
   BarController,
   BarElement,
@@ -55,7 +54,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 let currentUserId = null;
 let financeChart = null;
-
 
 
 // Proteção de rota
@@ -124,45 +122,43 @@ document.getElementById('expenseDate').value = today;
 
 // Adicionar Receita
 document.getElementById('incomeForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    await addDoc(
-        collection(db, "users", currentUserId, "incomes"),
-        {
-            description: incomeDescription.value,
-            amount: parseFloat(incomeAmount.value),
-            category: incomeCategory.value,
-            date: incomeDate.value,
-            createdAt: new Date()
-        }
-    );
+  await addDoc(
+    collection(db, "users", currentUserId, "incomes"),
+    {
+      description: incomeDescription.value,
+      amount: parseFloat(incomeAmount.value),
+      category: incomeCategory.value,
+      date: getDateFromSelectedFilter(),
+      createdAt: new Date()
+    }
+  );
 
-    document.getElementById('incomeForm').reset();
-    incomeDate.value = today;
-
-    loadData();
+  document.getElementById('incomeForm').reset();
+  loadData();
 });
+
 
 // Adicionar Despesa
 document.getElementById('expenseForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    await addDoc(
-        collection(db, "users", currentUserId, "expenses"),
-        {
-            description: expenseDescription.value,
-            amount: parseFloat(expenseAmount.value),
-            category: expenseCategory.value,
-            date: expenseDate.value,
-            createdAt: new Date()
-        }
-    );
+  await addDoc(
+    collection(db, "users", currentUserId, "expenses"),
+    {
+      description: expenseDescription.value,
+      amount: parseFloat(expenseAmount.value),
+      category: expenseCategory.value,
+      date: getDateFromSelectedFilter(),
+      createdAt: new Date()
+    }
+  );
 
-    document.getElementById('expenseForm').reset();
-    expenseDate.value = today;
-
-    loadData();
+  document.getElementById('expenseForm').reset();
+  loadData();
 });
+
 
 
 
@@ -572,6 +568,16 @@ function formatDate(dateString) {
         year: 'numeric'
     });
 }
+
+function getDateFromSelectedFilter() {
+  const today = new Date();
+  const year = selectedYear ? parseInt(selectedYear) : today.getFullYear();
+  const month = selectedMonth !== '' ? parseInt(selectedMonth) : today.getMonth();
+  const day = today.getDate();
+
+  return new Date(year, month, day).toISOString().split('T')[0];
+}
+
 
 function getCategoryName(category, type) {
     const categories = {
