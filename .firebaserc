@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "conecta-orixi",
+    "financeiro": "financeiro-686a0"
+  },
+  "targets": {},
+  "etags": {}
+}

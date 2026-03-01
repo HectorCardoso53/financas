@@ -1,9 +1,14 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
     getAuth,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword
+    signInWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+import {
+    getFirestore,
+    doc,
+    setDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 🔑 CONFIG DO FIREBASE
 const firebaseConfig = {
@@ -18,29 +23,84 @@ const firebaseConfig = {
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
-// Elementos
-const form = document.getElementById('loginForm');
-const registerBtn = document.getElementById('registerBtn');
-const msg = document.getElementById('authMessage');
+// =====================
+// 🎯 ELEMENTOS
+// =====================
 
-const emailInput = document.getElementById('email');
-const passwordInput = document.getElementById('password');
+const form = document.getElementById("loginForm");
+const msg = document.getElementById("authMessage");
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+const togglePassword = document.getElementById("togglePassword");
+const progressBar = document.getElementById("progressBar");
+const button = document.querySelector(".btn");
 
-// LOGIN
-form.addEventListener('submit', (e) => {
+// =====================
+// 🔄 PROGRESS BAR
+// =====================
+
+function startLoading() {
+    progressBar.style.width = "40%";
+    button.disabled = true;
+
+    setTimeout(() => {
+        progressBar.style.width = "70%";
+    }, 200);
+}
+
+function finishLoading() {
+    progressBar.style.width = "100%";
+
+    setTimeout(() => {
+        progressBar.style.width = "0%";
+        button.disabled = false;
+    }, 400);
+}
+
+// =====================
+// 🔐 LOGIN
+// =====================
+
+form.addEventListener("submit", async (e) => {
     e.preventDefault();
+
+    msg.textContent = "";
 
     const email = emailInput.value;
     const password = passwordInput.value;
 
-    signInWithEmailAndPassword(auth, email, password)
-        .then(() => {
-            window.location.href = "dashboard.html";
-        })
-        .catch(() => {
-            msg.textContent = "❌ Email ou senha inválidos";
-        });
+    startLoading();
+
+    try {
+
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // 🔥 SALVA EMAIL DO USUÁRIO NO FIRESTORE
+        await setDoc(doc(db, "users", user.uid), {
+            email: user.email
+        }, { merge: true });
+
+        finishLoading();
+        window.location.href = "dashboard.html";
+
+    } catch (error) {
+        finishLoading();
+        msg.textContent = "❌ Email ou senha inválidos";
+    }
 });
 
+// =====================
+// 👁 TOGGLE SENHA
+// =====================
 
+togglePassword.addEventListener("click", () => {
+    const isPassword = passwordInput.type === "password";
+
+    passwordInput.type = isPassword ? "text" : "password";
+
+    togglePassword.classList.toggle("bi-eye");
+    togglePassword.classList.toggle("bi-eye-slash");
+});

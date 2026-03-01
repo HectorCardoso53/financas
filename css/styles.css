@@ -773,6 +773,36 @@ header h1:hover {
   position: relative;
 }
 
+.password-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-field input {
+    width: 100%;
+    padding-right: 40px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    cursor: pointer;
+    font-size: 18px;
+    color: #666;
+}
+
+.progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 4px;
+    background: linear-gradient(90deg, #4CAF50, #00c6ff);
+    transition: width 0.3s ease;
+    z-index: 9999;
+}
+
 /* Setinha estilo chat */
 #robotText::before {
   content: "";
@@ -807,58 +837,76 @@ header h1:hover {
 
 
 /* ===============================
-   📱 MOBILE FIRST AJUSTES
+   📱 MOBILE – AJUSTE FINAL
 ================================ */
 @media (max-width: 600px) {
 
   body {
-    padding: 12px;
+    padding: 10px;
   }
 
-  /* Header */
+  /* ===== HEADER ===== */
   .app-header {
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     text-align: center;
   }
 
   .header-left h1 {
-    font-size: 1.6em;
+    font-size: 1.5em;
   }
 
   #userEmail {
-    font-size: 0.85em;
+    font-size: 0.8em;
+    opacity: 0.85;
   }
 
-  /* Dashboard cards */
+  .header-right {
+    width: 100%;
+  }
+
+  .header-right .btn {
+    width: 100%;
+  }
+
+  /* ===== DASHBOARD ===== */
   .dashboard {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .card-header h3 {
+    font-size: 1em;
+  }
+
+  .card-icon {
+    font-size: 1.6em;
+  }
+
+  .card-value {
+    font-size: 1.9em;
+    margin: 10px 0;
+  }
+
+  /* ===== SEÇÕES ===== */
+  .main-content {
     grid-template-columns: 1fr;
     gap: 14px;
   }
 
-  .card {
-    padding: 18px;
-  }
-
-  .card-value {
-    font-size: 2em;
-  }
-
-  /* Seções principais */
-  .main-content {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
   .section {
-    padding: 18px;
+    padding: 16px;
   }
 
   .section h2 {
-    font-size: 1.25em;
+    font-size: 1.2em;
   }
 
-  /* Formulários */
+  /* ===== FORMULÁRIOS ===== */
   .form-group input,
   .form-group select {
     padding: 14px;
@@ -870,56 +918,76 @@ header h1:hover {
     font-size: 1em;
   }
 
-  /* Listas */
+  /* ===== LISTAS ===== */
+  .transaction-list {
+    max-height: none;
+  }
+
   .transaction-item {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 6px;
+    padding: 12px 0;
+  }
+
+  .transaction-title {
+    font-size: 0.95em;
+  }
+
+  .transaction-details {
+    font-size: 0.8em;
   }
 
   .transaction-amount {
-    margin: 0;
+    margin: 4px 0;
     font-size: 1.1em;
   }
 
   .btn-delete {
     align-self: flex-end;
+    margin-top: 4px;
   }
 
-  /* Modais */
+  /* ===== MODAIS ===== */
   .chart-card {
     width: 95%;
     padding: 14px;
+    border-radius: 14px;
   }
 
   .chart-body {
-    height: 280px;
+    height: 260px;
   }
 
-  /* 🤖 Robô */
+  /* ===== ROBÔ ===== */
   .robot-content {
     width: 95%;
     padding: 18px;
+  }
+
+  .robot-content h3 {
+    font-size: 1.1em;
   }
 
   #robotText {
     font-size: 0.9em;
   }
 
-  /* 🎛️ Barra flutuante */
+  /* ===== BARRA FLUTUANTE ===== */
   .action-bar {
-    left: 16px;
-    right: 16px;
-    bottom: 16px;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
   }
 
   .action-btn {
-    width: 52px;
-    height: 52px;
-    font-size: 24px;
+    width: 50px;
+    height: 50px;
+    font-size: 22px;
   }
 
   .robot-btn {
-    font-size: 38px;
+    font-size: 36px;
   }
 }
+

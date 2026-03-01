@@ -1,30 +1,41 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <title>Entrar | Finanças Pessoais</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 </head>
 
 
 <body class="login-page">
 
-<div class="login-box">
-    <h1>💰 Finanças Pessoais</h1>
-    <p class="subtitle">Controle sua vida financeira em um só lugar</p>
-
-    <form id="loginForm">
-        <input type="email" id="email" placeholder="Email" required>
-        <input type="password" id="password" placeholder="Senha" required>
-
-        <button type="submit" class="btn">Entrar</button>
-    </form>
-
-    <p id="authMessage"></p>
-</div>
+    <div class="progress-bar" id="progressBar"></div>
 
 
-<script type="module" src="js/auth.js"></script>
+    <div class="login-box">
+        <h1>
+            <i class="bi bi-cash-coin"></i> Finanças Pessoais
+        </h1>
+        <p class="subtitle">Controle sua vida financeira em um só lugar</p>
+
+        <form id="loginForm">
+            <input type="email" id="email" placeholder="Email" required>
+            <div class="password-field">
+                <input type="password" id="password" placeholder="Senha" required>
+                <i class="bi bi-eye-slash toggle-password" id="togglePassword"></i>
+            </div>
+
+            <button type="submit" class="btn">Entrar</button>
+        </form>
+
+        <p id="authMessage"></p>
+    </div>
+
+
+    <script type="module" src="js/auth.js"></script>
 </body>
+
 </html>
