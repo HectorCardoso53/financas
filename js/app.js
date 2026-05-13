@@ -738,7 +738,7 @@ async function toggleExpensePaid(id, paid) {
 // 📱 CONFIGURAÇÃO DO ATALHO IPHONE
 // =====================================================
 
-const VOICE_FUNCTION_URL = "https://us-central1-financeiro-686a0.cloudfunctions.net/voiceEntry";
+const VOICE_FUNCTION_URL = "https://voiceentry-z54wjt7lga-uc.a.run.app";
 
 async function openShortcutModal() {
   document.getElementById("shortcutModal").classList.remove("hidden");

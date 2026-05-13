@@ -152,33 +152,46 @@ function extractAmount(lower) {
 function parseVoiceText(text) {
   const lower = text.toLowerCase().trim();
 
-  const expenseWords = ["comprei", "gastei", "paguei", "debitou", "saiu", "devo"];
-  const incomeWords = ["recebi", "ganhei", "entrou", "caiu"];
+  const expenseWords = [
+    "comprei", "gastei", "paguei", "debitou", "saiu", "devo",
+    "fui", "botei", "usei", "tirei", "custou", "cobrou",
+    "despesa", "gasto", "compra", "paguei", "quitei",
+  ];
+  const incomeWords = [
+    "recebi", "ganhei", "entrou", "caiu", "depositou",
+    "receita", "salário", "salario", "rendimento",
+  ];
 
   let type = null;
+  let matchedTrigger = null;
+
   for (const word of expenseWords) {
-    if (lower.includes(word)) { type = "expense"; break; }
+    if (lower.includes(word)) { type = "expense"; matchedTrigger = word; break; }
   }
   if (!type) {
     for (const word of incomeWords) {
-      if (lower.includes(word)) { type = "income"; break; }
+      if (lower.includes(word)) { type = "income"; matchedTrigger = word; break; }
     }
   }
-  if (!type) return null;
 
   const extracted = extractAmount(lower);
   if (!extracted || extracted.value <= 0) return null;
 
+  // Sem palavra-gatilho mas tem valor → assume despesa (caso mais comum)
+  if (!type) type = "expense";
+
   const { value: amount, matched: amountStr } = extracted;
 
-  const triggerPattern = [...expenseWords, ...incomeWords].join("|");
+  const allTriggers = [...expenseWords, ...incomeWords];
+  const triggerPattern = allTriggers.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
   const escapedAmount = amountStr.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   let description = lower
-    .replace(new RegExp(`\\b(${triggerPattern})\\b`, "g"), "")
+    .replace(new RegExp(`\\b(${triggerPattern})\\b`, "gi"), "")
     .replace(new RegExp(escapedAmount, "i"), "")
     .replace(/\breais?\b/gi, "")
-    .replace(/\b(de|do|da|no|na|nos|nas|num|numa|em|por|pro|pra|um|uma|o|a|os|as)\b/g, " ")
+    .replace(/\breal\b/gi, "")
+    .replace(/\b(de|do|da|no|na|nos|nas|num|numa|em|por|pro|pra|um|uma|o|a|os|as|e|lá|aqui|hoje|ontem)\b/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -202,7 +215,7 @@ exports.voiceEntry = onRequest({ region: "us-central1" }, async (req, res) => {
   const { uid, token, text } = params;
 
   if (!uid || !token || !text) {
-    res.status(400).json({ error: "Parâmetros obrigatórios: uid, token, text" });
+    res.status(400).send("Erro: parâmetros uid, token e text são obrigatórios.");
     return;
   }
 
@@ -210,13 +223,13 @@ exports.voiceEntry = onRequest({ region: "us-central1" }, async (req, res) => {
   const userDoc = await db.collection("users").doc(uid).get();
 
   if (!userDoc.exists || userDoc.data().voiceToken !== token) {
-    res.status(401).json({ error: "Token inválido" });
+    res.status(401).send("Erro: token inválido.");
     return;
   }
 
   const result = parseVoiceText(text);
   if (!result) {
-    res.status(422).json({ error: `Não entendi "${text}". Tente: comprei pão 2 reais` });
+    res.status(422).send(`Não entendi "${text}". Tente dizer o valor junto, ex: "pão 2 reais" ou "gastei 50 no mercado".`);
     return;
   }
 
@@ -239,8 +252,6 @@ exports.voiceEntry = onRequest({ region: "us-central1" }, async (req, res) => {
   await db.collection("users").doc(uid).collection(collectionName).add(data);
 
   const typeLabel = result.type === "income" ? "Receita" : "Despesa";
-  res.json({
-    ok: true,
-    message: `${typeLabel} salva: ${result.description} — R$ ${result.amount.toFixed(2).replace(".", ",")}`,
-  });
+  const valor = result.amount.toFixed(2).replace(".", ",");
+  res.send(`${typeLabel} salva!\n${result.description} — R$ ${valor}`);
 });
