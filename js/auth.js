@@ -1,33 +1,6 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-    getAuth,
-    signInWithEmailAndPassword
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-import {
-    getFirestore,
-    doc,
-    setDoc
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-// 🔑 CONFIG DO FIREBASE
-const firebaseConfig = {
-    apiKey: "AIzaSyC1GRcrtuas2y-gqKMceiVLp7i55XgRYGA",
-    authDomain: "financeiro-686a0.firebaseapp.com",
-    projectId: "financeiro-686a0",
-    storageBucket: "financeiro-686a0.firebasestorage.app",
-    messagingSenderId: "586895715102",
-    appId: "1:586895715102:web:86cb196335f11fb47bb70f"
-};
-
-// Inicializar Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-// =====================
-// 🎯 ELEMENTOS
-// =====================
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { auth, db } from "./firebase-config.js";
 
 const form = document.getElementById("loginForm");
 const msg = document.getElementById("authMessage");
@@ -36,10 +9,6 @@ const passwordInput = document.getElementById("password");
 const togglePassword = document.getElementById("togglePassword");
 const progressBar = document.getElementById("progressBar");
 const button = document.querySelector(".btn");
-
-// =====================
-// 🔄 PROGRESS BAR
-// =====================
 
 function startLoading() {
     progressBar.style.width = "40%";
@@ -59,10 +28,6 @@ function finishLoading() {
     }, 400);
 }
 
-// =====================
-// 🔐 LOGIN
-// =====================
-
 form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -74,11 +39,9 @@ form.addEventListener("submit", async (e) => {
     startLoading();
 
     try {
-
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // 🔥 SALVA EMAIL DO USUÁRIO NO FIRESTORE
         await setDoc(doc(db, "users", user.uid), {
             email: user.email
         }, { merge: true });
@@ -91,10 +54,6 @@ form.addEventListener("submit", async (e) => {
         msg.textContent = "❌ Email ou senha inválidos";
     }
 });
-
-// =====================
-// 👁 TOGGLE SENHA
-// =====================
 
 togglePassword.addEventListener("click", () => {
     const isPassword = passwordInput.type === "password";

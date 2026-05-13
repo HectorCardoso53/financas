@@ -22,6 +22,9 @@
             </div>
 
             <div class="header-right">
+                <button id="shortcutSetupBtn" class="btn btn-secondary" title="Configurar Atalho iPhone">
+                    <i class="bi bi-phone"></i> Atalho iPhone
+                </button>
                 <button id="logoutBtn" class="btn btn-secondary">
                     Sair
                 </button>
@@ -211,6 +214,31 @@
     </div>
 
 
+    <!-- Modal de Configuração do Atalho iPhone -->
+    <div id="shortcutModal" class="robot-modal hidden">
+        <div class="robot-content" style="max-width:560px;max-height:90vh;overflow-y:auto;">
+
+            <div class="robot-header">
+                <h3>
+                    <i class="bi bi-phone"></i>
+                    Atalho iPhone
+                </h3>
+                <button class="close-btn" id="closeShortcutBtn">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <div id="shortcutContent" style="padding:4px 0;">
+                <p style="text-align:center;padding:20px;opacity:0.6;">Carregando...</p>
+            </div>
+
+            <button class="btn btn-secondary" id="closeShortcutBtn2" style="margin-top:16px;">
+                Fechar
+            </button>
+
+        </div>
+    </div>
+
     <!-- Modal do robô -->
     <div id="robotModal" class="robot-modal hidden">
         <div class="robot-content">
@@ -220,14 +248,14 @@
                     <i class="bi bi-robot"></i>
                     Coach Financeiro
                 </h3>
-                <button class="close-btn" onclick="closeRobot()">
+                <button class="close-btn" id="closeRobotBtn">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
 
             <p id="robotText"></p>
 
-            <button class="btn btn-secondary" onclick="closeRobot()">
+            <button class="btn btn-secondary" id="closeRobotBtn2">
                 Fechar
             </button>
 
@@ -244,7 +272,7 @@
                     Comparativo Anual
                 </h3>
 
-                <button class="close-btn" onclick="closeChart()">
+                <button class="close-btn" id="closeChartBtn">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
