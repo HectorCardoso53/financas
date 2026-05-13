@@ -110,98 +110,41 @@ exports.checkDueExpenses = onSchedule(
 // 🎤 ENTRADA POR VOZ — Atalho iPhone (Siri Shortcuts)
 // =====================================================
 
-function inferCategory(description, type) {
-  const lower = description.toLowerCase();
-  if (type === "expense") {
-    if (/mercado|supermercado|pão|comida|almoço|jantar|lanche|restaurante|pizza|hamburguer|açougue|hortifruti|leite|frango|carne|arroz|feijão|padaria|sorvete/.test(lower)) return "alimentacao";
-    if (/uber|ônibus|onibus|metrô|metro|combustível|combustivel|gasolina|passagem|táxi|taxi|estacionamento|posto/.test(lower)) return "transporte";
-    if (/aluguel|condomínio|condominio|luz|água|agua|internet|gás|gas|iptu|energia|conta/.test(lower)) return "moradia";
-    if (/cinema|netflix|spotify|jogo|show|teatro|bar|balada|streaming/.test(lower)) return "lazer";
-    if (/médico|medico|remédio|remedio|farmácia|farmacia|hospital|plano|dentista|consulta|exame/.test(lower)) return "saude";
-    if (/curso|livro|escola|faculdade|material|apostila|mensalidade|aula/.test(lower)) return "educacao";
-    return "outros";
-  } else {
-    if (/salário|salario/.test(lower)) return "salario";
-    if (/freelance|bico|serviço|servico|trabalho|projeto/.test(lower)) return "freelance";
-    if (/dividendo|investimento|rendimento|juros|fundo/.test(lower)) return "investimentos";
-    return "outros";
-  }
+async function parseWithAI(text) {
+  const prompt = `Você é um assistente financeiro. Analise o texto abaixo e extraia os dados da transação.
+
+Texto: "${text}"
+
+Responda APENAS com JSON válido, sem explicação, no formato:
+{"type":"expense","amount":2.00,"description":"Pão","category":"alimentacao"}
+
+Regras:
+- type: "expense" para despesas (compras, gastos, pagamentos) ou "income" para receitas (salário, ganhos)
+- amount: valor numérico em reais (converta valores escritos: "dois" = 2, "vinte e cinco" = 25, "meia bala" = 0.50)
+- description: o que foi comprado/recebido, capitalizado, sem verbos e sem valores
+- category para expense: alimentacao, transporte, moradia, lazer, saude, educacao, outros
+- category para income: salario, freelance, investimentos, outros
+- Se não identificar valor numérico, retorne: {"error":"sem valor"}`;
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": process.env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 200,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+
+  const data = await response.json();
+  return JSON.parse(data.content[0].text.trim());
 }
 
-function extractAmount(lower) {
-  const halfMatch = lower.match(/(\d+)\s*reais?\s*e\s*meio/);
-  if (halfMatch) return { value: parseFloat(halfMatch[1]) + 0.5, matched: halfMatch[0] };
-
-  const centsMatch = lower.match(/(\d+)\s*reais?\s*e\s*(\d+)\s*centavos?/);
-  if (centsMatch) {
-    return {
-      value: parseFloat(centsMatch[1]) + parseFloat(centsMatch[2]) / 100,
-      matched: centsMatch[0],
-    };
-  }
-
-  const reaisMatch = lower.match(/(\d+(?:[,\.]\d{1,2})?)\s*(?:reais?|real)/);
-  if (reaisMatch) return { value: parseFloat(reaisMatch[1].replace(",", ".")), matched: reaisMatch[0] };
-
-  const numMatch = lower.match(/(\d+(?:[,\.]\d{1,2})?)/);
-  if (numMatch) return { value: parseFloat(numMatch[1].replace(",", ".")), matched: numMatch[0] };
-
-  return null;
-}
-
-function parseVoiceText(text) {
-  const lower = text.toLowerCase().trim();
-
-  const expenseWords = [
-    "comprei", "gastei", "paguei", "debitou", "saiu", "devo",
-    "fui", "botei", "usei", "tirei", "custou", "cobrou",
-    "despesa", "gasto", "compra", "paguei", "quitei",
-  ];
-  const incomeWords = [
-    "recebi", "ganhei", "entrou", "caiu", "depositou",
-    "receita", "salário", "salario", "rendimento",
-  ];
-
-  let type = null;
-  let matchedTrigger = null;
-
-  for (const word of expenseWords) {
-    if (lower.includes(word)) { type = "expense"; matchedTrigger = word; break; }
-  }
-  if (!type) {
-    for (const word of incomeWords) {
-      if (lower.includes(word)) { type = "income"; matchedTrigger = word; break; }
-    }
-  }
-
-  const extracted = extractAmount(lower);
-  if (!extracted || extracted.value <= 0) return null;
-
-  // Sem palavra-gatilho mas tem valor → assume despesa (caso mais comum)
-  if (!type) type = "expense";
-
-  const { value: amount, matched: amountStr } = extracted;
-
-  const allTriggers = [...expenseWords, ...incomeWords];
-  const triggerPattern = allTriggers.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
-  const escapedAmount = amountStr.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-  let description = lower
-    .replace(new RegExp(`\\b(${triggerPattern})\\b`, "gi"), "")
-    .replace(new RegExp(escapedAmount, "i"), "")
-    .replace(/\breais?\b/gi, "")
-    .replace(/\breal\b/gi, "")
-    .replace(/\b(de|do|da|no|na|nos|nas|num|numa|em|por|pro|pra|um|uma|o|a|os|as|e|lá|aqui|hoje|ontem)\b/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (!description) description = type === "expense" ? "Despesa" : "Receita";
-  description = description.charAt(0).toUpperCase() + description.slice(1);
-
-  return { type, amount, description, category: inferCategory(description, type) };
-}
-
-exports.voiceEntry = onRequest({ region: "us-central1" }, async (req, res) => {
+exports.voiceEntry = onRequest({ region: "us-central1", timeoutSeconds: 30 }, async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
 
   if (req.method === "OPTIONS") {
@@ -227,9 +170,16 @@ exports.voiceEntry = onRequest({ region: "us-central1" }, async (req, res) => {
     return;
   }
 
-  const result = parseVoiceText(text);
-  if (!result) {
-    res.status(422).send(`Não entendi "${text}". Tente dizer o valor junto, ex: "pão 2 reais" ou "gastei 50 no mercado".`);
+  let result;
+  try {
+    result = await parseWithAI(text);
+  } catch {
+    res.status(500).send("Erro ao interpretar o texto. Tente novamente.");
+    return;
+  }
+
+  if (result.error || !result.amount || result.amount <= 0) {
+    res.status(422).send(`Não entendi o valor em "${text}". Diga o valor, ex: "comprei pão dois reais".`);
     return;
   }
 
