@@ -56,6 +56,23 @@ let expenses = [];
 let selectedMonth = "";
 let selectedYear = "";
 
+function getLocalDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;",
+  }[char]));
+}
+
 // Easter Eggs
 let logoClicks = 0;
 let profitClicks = 0;
@@ -140,7 +157,7 @@ async function loadData() {
   }
 }
 
-const today = new Date().toISOString().split("T")[0];
+const today = getLocalDateString();
 document.getElementById("incomeDate").value = today;
 document.getElementById("expenseDate").value = today;
 
@@ -208,7 +225,7 @@ document.getElementById("expenseForm").addEventListener("submit", async (e) => {
       date,
       dueDate: date,
       createdAt: new Date(),
-      paid: false,
+      paid: true,
     });
 
     e.target.reset();
@@ -314,10 +331,13 @@ function generateAISuggestion() {
   return generateAISuggestionByYear(parseInt(selectedYear));
 }
 
-document.getElementById("robotCoach").addEventListener("click", () => {
-  document.getElementById("robotText").innerText = generateAISuggestion();
-  document.getElementById("robotModal").classList.remove("hidden");
-});
+const robotCoachBtn = document.getElementById("robotCoach");
+if (robotCoachBtn) {
+  robotCoachBtn.addEventListener("click", () => {
+    document.getElementById("robotText").innerText = generateAISuggestion();
+    document.getElementById("robotModal").classList.remove("hidden");
+  });
+}
 
 function closeRobot() {
   document.getElementById("robotModal").classList.add("hidden");
@@ -438,16 +458,19 @@ function renderYearlyComparisonChart(year) {
 const openChartBtn = document.getElementById("openChartBtn");
 const chartModal = document.getElementById("chartModal");
 
-if (openChartBtn && chartModal) {
-  openChartBtn.addEventListener("click", () => {
-    if (selectedYear === "") {
-      alert("Selecione um ANO para ver o resumo anual");
-      return;
-    }
-    chartModal.classList.remove("hidden");
-    setTimeout(() => renderYearlyComparisonChart(parseInt(selectedYear)), 50);
-  });
+function openChart() {
+  if (selectedYear === "") {
+    alert("Selecione um ANO para ver o resumo anual");
+    return;
+  }
+  chartModal.classList.remove("hidden");
+  setTimeout(() => renderYearlyComparisonChart(parseInt(selectedYear)), 50);
 }
+
+if (openChartBtn) openChartBtn.addEventListener("click", openChart);
+
+const openChartBtnHeader = document.getElementById("openChartBtnHeader");
+if (openChartBtnHeader) openChartBtnHeader.addEventListener("click", openChart);
 
 function closeChart() {
   chartModal.classList.add("hidden");
@@ -458,6 +481,40 @@ function closeChart() {
 }
 
 document.getElementById("closeChartBtn").addEventListener("click", closeChart);
+
+// Hambúrguer menu
+const hamburgerBtn = document.getElementById("hamburgerBtn");
+const mobileMenu = document.getElementById("mobileMenu");
+
+hamburgerBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  mobileMenu.classList.toggle("open");
+});
+
+document.addEventListener("click", (e) => {
+  if (!mobileMenu.contains(e.target) && e.target !== hamburgerBtn) {
+    mobileMenu.classList.remove("open");
+  }
+});
+
+// Botões do menu mobile
+const openChartBtnMobile = document.getElementById("openChartBtnMobile");
+if (openChartBtnMobile) openChartBtnMobile.addEventListener("click", () => { mobileMenu.classList.remove("open"); openChart(); });
+
+document.getElementById("shortcutIosMobileBtn")?.addEventListener("click", () => {
+  mobileMenu.classList.remove("open");
+  document.getElementById("shortcutIosSetupBtn").click();
+});
+
+document.getElementById("shortcutAndroidMobileBtn")?.addEventListener("click", () => {
+  mobileMenu.classList.remove("open");
+  document.getElementById("shortcutAndroidSetupBtn").click();
+});
+
+document.getElementById("logoutMobileBtn")?.addEventListener("click", () => {
+  mobileMenu.classList.remove("open");
+  document.getElementById("logoutBtn").click();
+});
 
 function renderTransactions() {
   const filteredIncomes = filterByDate(incomes);
@@ -475,13 +532,18 @@ function renderTransactions() {
   } else {
     incomeList.innerHTML = filteredIncomes
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .map((item) => `
+      .map((item) => {
+        const safeDescription = escapeHtml(item.description);
+        const safeCategoryClass = escapeHtml(item.category);
+        const safeCategoryName = escapeHtml(getCategoryName(item.category, "income"));
+
+        return `
         <div class="transaction-item">
           <div class="transaction-info">
             <div class="transaction-title">
-              ${item.description}
-              <span class="category-badge category-${item.category}">
-                ${getCategoryName(item.category, "income")}
+              ${safeDescription}
+              <span class="category-badge category-${safeCategoryClass}">
+                ${safeCategoryName}
               </span>
             </div>
             <div class="transaction-details">${formatDate(item.date)}</div>
@@ -491,7 +553,8 @@ function renderTransactions() {
             <i class="bi bi-trash"></i>
           </button>
         </div>
-      `)
+      `;
+      })
       .join("");
   }
 
@@ -507,13 +570,18 @@ function renderTransactions() {
   } else {
     expenseList.innerHTML = filteredExpenses
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .map((item) => `
+      .map((item) => {
+        const safeDescription = escapeHtml(item.description);
+        const safeCategoryClass = escapeHtml(item.category);
+        const safeCategoryName = escapeHtml(getCategoryName(item.category, "expense"));
+
+        return `
         <div class="transaction-item">
           <div class="transaction-info">
             <div class="transaction-title">
-              ${item.description}
-              <span class="category-badge category-${item.category}">
-                ${getCategoryName(item.category, "expense")}
+              ${safeDescription}
+              <span class="category-badge category-${safeCategoryClass}">
+                ${safeCategoryName}
               </span>
             </div>
             <div class="transaction-details">${formatDate(item.date)}</div>
@@ -526,7 +594,8 @@ function renderTransactions() {
             </button>
           </div>
         </div>
-      `)
+      `;
+      })
       .join("");
   }
 }
@@ -681,6 +750,9 @@ function triggerKonamiSecret() {
   setTimeout(() => secret.remove(), TIMEOUTS.KONAMI_DISMISS);
 }
 
+const filterYear = document.getElementById("filterYear");
+const filterMonth = document.getElementById("filterMonth");
+
 function populateYears() {
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
@@ -696,9 +768,6 @@ function populateYears() {
   selectedMonth = currentMonth.toString();
   filterMonth.value = selectedMonth;
 }
-
-const filterYear = document.getElementById("filterYear");
-const filterMonth = document.getElementById("filterMonth");
 
 filterYear.addEventListener("change", (e) => {
   selectedYear = e.target.value;
@@ -735,13 +804,15 @@ async function toggleExpensePaid(id, paid) {
 }
 
 // =====================================================
-// 📱 CONFIGURAÇÃO DO ATALHO IPHONE
+// Configuracao dos atalhos de voz
 // =====================================================
 
-const VOICE_FUNCTION_URL = "https://voiceentry-z54wjt7lga-uc.a.run.app";
+const VOICE_FUNCTION_URL = "https://us-central1-financeiro-686a0.cloudfunctions.net/voiceEntry";
 
-async function openShortcutModal() {
+async function openShortcutModal(platform = "ios") {
   document.getElementById("shortcutModal").classList.remove("hidden");
+  document.getElementById("shortcutModalTitle").textContent =
+    platform === "android" ? "Atalho Android" : "Atalho iPhone";
 
   const content = document.getElementById("shortcutContent");
   content.innerHTML = `<p style="text-align:center;padding:20px;opacity:0.6;">Gerando seu link seguro...</p>`;
@@ -758,25 +829,32 @@ async function openShortcutModal() {
 
     const uid = currentUserId;
     const baseUrl = VOICE_FUNCTION_URL;
+    const fullUrl = `${baseUrl}?uid=${uid}&token=${voiceToken}&text=TEXTO_DITADO`;
 
     content.innerHTML = `
       <p style="margin-bottom:18px;">
-        Siga os passos abaixo para criar o atalho no seu iPhone.
+        Escolha seu celular e siga os passos para registrar receitas e despesas por voz.
         Você só precisa fazer isso <strong>uma vez</strong>.
       </p>
 
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:18px;">
         <p style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">
-          Sua URL personalizada
+          URL completa para conferência
         </p>
         <code style="font-size:11px;word-break:break-all;display:block;line-height:1.6;color:#1e293b;">
-          ${baseUrl}?uid=${uid}&amp;token=${voiceToken}&amp;text=TEXTO_DITADO
+          ${fullUrl}
         </code>
+        <p style="font-size:12px;color:#64748b;margin-top:10px;line-height:1.5;">
+          No app Atalhos, use a URL base abaixo e coloque <code>uid</code>, <code>token</code> e <code>text</code> nos parÃ¢metros de consulta.
+        </p>
       </div>
 
-      <div style="display:flex;gap:8px;margin-bottom:24px;">
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:24px;">
         <button id="copyUrlBtn" class="btn" style="flex:1;font-size:13px;">
           <i class="bi bi-clipboard"></i> Copiar URL base
+        </button>
+        <button id="copyFullUrlBtn" class="btn btn-secondary" style="flex:1;font-size:13px;">
+          <i class="bi bi-link-45deg"></i> Copiar completa
         </button>
         <button id="copyUidBtn" class="btn btn-secondary" style="flex:1;font-size:13px;">
           <i class="bi bi-person"></i> Copiar UID
@@ -786,6 +864,7 @@ async function openShortcutModal() {
         </button>
       </div>
 
+      <div id="iosGuide" style="display:${platform === "android" ? "none" : "block"};">
       <h4 style="margin-bottom:12px;font-size:15px;">Como montar o Atalho no iPhone:</h4>
       <ol style="line-height:2.2;font-size:14px;padding-left:20px;">
         <li>Abra o app <strong>Atalhos</strong> no iPhone</li>
@@ -794,14 +873,37 @@ async function openShortcutModal() {
         <li>Adicione a ação <strong>"Obter conteúdo de URL"</strong></li>
         <li>
           No campo URL, cole: <code style="font-size:12px;">${baseUrl}</code><br>
-          Em <em>Parâmetros</em>, adicione três itens:<br>
+          Toque em <strong>Mostrar Mais</strong> e deixe o método como <strong>GET</strong>.<br>
+          Em <em>Parâmetros de consulta</em>, adicione três itens:<br>
           &nbsp;&nbsp;• <code>uid</code> = <code>${uid}</code><br>
           &nbsp;&nbsp;• <code>token</code> = <code>${voiceToken}</code><br>
           &nbsp;&nbsp;• <code>text</code> = <em>variável "Texto Ditado"</em> do passo 3
         </li>
-        <li>Adicione a ação <strong>"Mostrar resultado"</strong></li>
+        <li>Adicione a ação <strong>"Obter valor de dicionário"</strong>: chave <code>message</code> de <em>Conteúdos do URL</em></li>
+        <li>Adicione a ação <strong>"Mostrar resultado"</strong> usando o valor <code>message</code></li>
         <li>Dê o nome <strong>"Registrar gasto"</strong> e salve</li>
       </ol>
+      </div>
+
+      <div id="androidGuide" style="display:${platform === "android" ? "block" : "none"};">
+        <h4 style="margin-bottom:12px;font-size:15px;">Se seu celular for Android:</h4>
+        <ol style="line-height:2.2;font-size:14px;padding-left:20px;">
+          <li>Instale o app <strong>Tasker</strong> ou <strong>Automate</strong></li>
+          <li>Crie uma tarefa chamada <strong>"Registrar gasto"</strong></li>
+          <li>Adicione uma etapa de <strong>entrada de voz</strong></li>
+          <li>Adicione uma etapa <strong>HTTP Request</strong></li>
+          <li>
+            Metodo: <strong>GET</strong><br>
+            URL: <code style="font-size:12px;">${baseUrl}</code><br>
+            Parametros:<br>
+            &nbsp;&nbsp;• <code>uid</code> = <code>${uid}</code><br>
+            &nbsp;&nbsp;• <code>token</code> = <code>${voiceToken}</code><br>
+            &nbsp;&nbsp;• <code>text</code> = texto capturado pela voz
+          </li>
+          <li>Mostre o campo <code>message</code> da resposta</li>
+          <li>No Google Assistente, chame: <strong>"Ok Google, registrar gasto"</strong></li>
+        </ol>
+      </div>
 
       <div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:12px;margin-top:16px;font-size:13px;">
         <strong>Exemplos de frases:</strong><br>
@@ -810,8 +912,12 @@ async function openShortcutModal() {
     `;
 
     document.getElementById("copyUrlBtn").addEventListener("click", () => {
-      navigator.clipboard.writeText(`${baseUrl}?uid=${uid}&token=${voiceToken}&text=TEXTO_DITADO`);
-      showToast("URL copiada!", "success");
+      navigator.clipboard.writeText(baseUrl);
+      showToast("URL base copiada!", "success");
+    });
+    document.getElementById("copyFullUrlBtn").addEventListener("click", () => {
+      navigator.clipboard.writeText(fullUrl);
+      showToast("URL completa copiada!", "success");
     });
     document.getElementById("copyUidBtn").addEventListener("click", () => {
       navigator.clipboard.writeText(uid);
@@ -831,7 +937,7 @@ function closeShortcutModal() {
   document.getElementById("shortcutModal").classList.add("hidden");
 }
 
-document.getElementById("shortcutSetupBtn").addEventListener("click", openShortcutModal);
+document.getElementById("shortcutIosSetupBtn").addEventListener("click", () => openShortcutModal("ios"));
+document.getElementById("shortcutAndroidSetupBtn").addEventListener("click", () => openShortcutModal("android"));
 document.getElementById("closeShortcutBtn").addEventListener("click", closeShortcutModal);
 document.getElementById("closeShortcutBtn2").addEventListener("click", closeShortcutModal);
-
