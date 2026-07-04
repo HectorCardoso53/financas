@@ -194,6 +194,7 @@ function renderCofre() {
       </span>
     </div>
   `).join("");
+  updateDashboard();
 }
 
 const cofreModal = document.getElementById("cofreModal");
@@ -451,10 +452,11 @@ function updateDashboard() {
   const totalExpense = filteredExpenses.reduce((sum, item) => sum + item.amount, 0);
   const profit = totalIncome - totalExpense;
 
+  const saldo = profit - getCofreBalance();
   document.getElementById("totalIncome").textContent = formatCurrency(totalIncome);
   document.getElementById("totalExpense").textContent = formatCurrency(totalExpense);
-  document.getElementById("totalProfit").textContent = formatCurrency(profit);
-  document.getElementById("currentBalance").textContent = formatCurrency(profit);
+  document.getElementById("totalProfit").textContent = formatCurrency(saldo);
+  document.getElementById("currentBalance").textContent = formatCurrency(saldo);
 }
 
 function filterByDate(list) {
