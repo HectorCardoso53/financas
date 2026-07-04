@@ -896,6 +896,12 @@ header h1:hover {
   border-color: rgba(34, 197, 94, 0.35);
 }
 
+/* Botão cofre no header */
+.btn-cofre-header {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
 /* ===== HAMBÚRGUER ===== */
 .hamburger {
   display: none;
@@ -1198,6 +1204,327 @@ header h1:hover {
   opacity: .95;
 }
 
+
+/* ===============================
+   🔐 COFRE
+================================ */
+.cofre-section {
+    background: linear-gradient(135deg, #1a2744 0%, #132337 100%);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 20px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(245,158,11,0.08);
+}
+
+.cofre-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.cofre-icon {
+    font-size: 2.2em;
+    line-height: 1;
+    filter: drop-shadow(0 2px 6px rgba(245,158,11,0.4));
+}
+
+.cofre-info h2 {
+    font-family: 'Outfit', sans-serif;
+    color: #f59e0b;
+    font-size: 1.1em;
+    font-weight: 700;
+    margin: 0;
+    border: none;
+    padding: 0;
+}
+
+.cofre-info p {
+    color: #566a84;
+    font-size: 0.78em;
+    margin-top: 2px;
+}
+
+.cofre-balance {
+    margin-left: auto;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.9em;
+    font-weight: 700;
+    color: #f59e0b;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.5px;
+}
+
+.cofre-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.btn-cofre-deposit {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    flex: 1;
+    margin-top: 0 !important;
+}
+
+.btn-cofre-withdraw {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: #0a0f1c !important;
+    flex: 1;
+    margin-top: 0 !important;
+}
+
+.cofre-history {
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 12px;
+}
+
+.cofre-history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 8px;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.cofre-history-item:hover {
+    background: rgba(255,255,255,0.04);
+}
+
+.cofre-deposit-amount {
+    color: #10b981;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    font-variant-numeric: tabular-nums;
+}
+
+.cofre-withdraw-amount {
+    color: #f59e0b;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Overlay do cofre */
+.cofre-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,15,28,0.75);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 16px;
+}
+
+.cofre-overlay.hidden { display: none; }
+
+/* Modal principal do cofre */
+.cofre-modal {
+    background: #111c2d;
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 460px;
+    max-height: 88vh;
+    overflow-y: auto;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    animation: chartPop .3s cubic-bezier(0.22,1,0.36,1);
+}
+
+.cofre-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 20px 0;
+}
+
+.cofre-modal-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cofre-modal-emoji {
+    font-size: 2em;
+    filter: drop-shadow(0 2px 8px rgba(245,158,11,0.4));
+}
+
+.cofre-modal-header h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #f59e0b;
+    margin: 0;
+}
+
+.cofre-modal-header p {
+    font-size: 0.75em;
+    color: #566a84;
+    margin: 0;
+}
+
+.cofre-modal-close {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.45);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82em;
+    transition: background 0.2s, color 0.2s;
+    flex-shrink: 0;
+}
+
+.cofre-modal-close:hover {
+    background: rgba(255,255,255,0.12);
+    color: white;
+}
+
+/* Saldo em destaque */
+.cofre-modal-saldo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.cofre-saldo-label {
+    font-size: 0.78em;
+    color: #566a84;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 6px;
+}
+
+.cofre-saldo-valor {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.4em;
+    font-weight: 800;
+    color: #f59e0b;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
+}
+
+/* Botões de ação do cofre */
+.cofre-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.cofre-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 10px;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88em;
+    font-weight: 600;
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.cofre-action-btn i {
+    font-size: 1.5em;
+}
+
+.cofre-action-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+.cofre-depositar {
+    background: rgba(16,185,129,0.15);
+    color: #10b981;
+    border: 1px solid rgba(16,185,129,0.25);
+}
+
+.cofre-retirar {
+    background: rgba(245,158,11,0.12);
+    color: #f59e0b;
+    border: 1px solid rgba(245,158,11,0.25);
+}
+
+/* Histórico dentro do modal */
+.cofre-modal-historico {
+    padding: 16px 20px 20px;
+}
+
+.cofre-modal-historico h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #8a9ab5;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Sub-modal formulário */
+.cofre-form-card {
+    background: #111c2d;
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 22px;
+    padding: 32px 28px 24px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.7);
+    animation: chartPop .25s cubic-bezier(0.22,1,0.36,1);
+}
+
+.cofre-form-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.2em;
+    font-weight: 700;
+    color: #f59e0b;
+    margin: 10px 0 4px;
+}
+
+.cofre-form-balance {
+    font-size: 0.8em;
+    color: #566a84;
+    margin-bottom: 20px;
+}
+
+.cofre-form-balance span {
+    color: #8a9ab5;
+    font-weight: 600;
+}
+
+.cofre-form-card .form-group {
+    text-align: left;
+}
+
+.cofre-confirm-btn {
+    margin-top: 8px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 700;
+    padding: 13px;
+}
 
 /* ===============================
    📱 MOBILE

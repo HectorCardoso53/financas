@@ -152,10 +152,107 @@ async function loadData() {
 
     updateDashboard();
     renderTransactions();
+    await loadCofre();
   } catch {
     showToast("Erro ao carregar dados. Verifique sua conexão.");
   }
 }
+
+// ============ COFRE ============
+let cofreTransactions = [];
+let cofreModalType = "deposit";
+
+async function loadCofre() {
+  const ref = collection(db, "users", currentUserId, "cofreTransactions");
+  const snap = await getDocs(query(ref, orderBy("createdAt", "desc")));
+  cofreTransactions = [];
+  snap.forEach(d => cofreTransactions.push({ id: d.id, ...d.data() }));
+  renderCofre();
+}
+
+function getCofreBalance() {
+  return cofreTransactions.reduce((total, t) =>
+    t.type === "deposit" ? total + t.amount : total - t.amount, 0);
+}
+
+function renderCofre() {
+  document.getElementById("cofreBalance").textContent = formatCurrency(getCofreBalance());
+
+  const el = document.getElementById("cofreHistory");
+  if (cofreTransactions.length === 0) {
+    el.innerHTML = `<div class="empty-state" style="padding:20px"><p>Nenhuma movimentação ainda</p></div>`;
+    return;
+  }
+  el.innerHTML = cofreTransactions.slice(0, 15).map(t => `
+    <div class="cofre-history-item">
+      <div>
+        <div class="transaction-title">${t.description}</div>
+        <div class="transaction-details">${formatDate(t.date)}</div>
+      </div>
+      <span class="${t.type === "deposit" ? "cofre-deposit-amount" : "cofre-withdraw-amount"}">
+        ${t.type === "deposit" ? "+" : "-"} ${formatCurrency(t.amount)}
+      </span>
+    </div>
+  `).join("");
+}
+
+const cofreModal = document.getElementById("cofreModal");
+
+const cofreFormModal = document.getElementById("cofreFormModal");
+
+function openCofreFormModal(type) {
+  cofreModalType = type;
+  const isDeposit = type === "deposit";
+  document.getElementById("cofreFormIcon").textContent = isDeposit ? "💰" : "💸";
+  document.getElementById("cofreModalTitle").textContent = isDeposit ? "Depositar" : "Retirar";
+  document.getElementById("cofreModalBalanceDisplay").textContent = formatCurrency(getCofreBalance());
+  const btn = document.getElementById("cofreConfirmBtn");
+  btn.className = `btn cofre-confirm-btn ${isDeposit ? "btn-cofre-deposit" : "btn-cofre-withdraw"}`;
+  btn.innerHTML = isDeposit ? `<i class="bi bi-check-lg"></i> Depositar` : `<i class="bi bi-check-lg"></i> Retirar`;
+  document.getElementById("cofreAmount").value = "";
+  document.getElementById("cofreDescription").value = "";
+  cofreFormModal.classList.remove("hidden");
+}
+
+document.getElementById("cofreDepositBtn").addEventListener("click", () => openCofreFormModal("deposit"));
+document.getElementById("cofreWithdrawBtn").addEventListener("click", () => openCofreFormModal("withdraw"));
+
+document.getElementById("closeCofreFormBtn").addEventListener("click", () => {
+  cofreFormModal.classList.add("hidden");
+});
+
+document.getElementById("closeCofreBtn").addEventListener("click", () => {
+  cofreModal.classList.add("hidden");
+});
+
+cofreModal.addEventListener("click", (e) => {
+  if (e.target === cofreModal) cofreModal.classList.add("hidden");
+});
+
+document.getElementById("cofreConfirmBtn").addEventListener("click", async () => {
+  const amount = parseFloat(document.getElementById("cofreAmount").value);
+  const description = document.getElementById("cofreDescription").value.trim();
+
+  if (!amount || amount <= 0) { showToast("Informe um valor válido."); return; }
+  if (cofreModalType === "withdraw" && amount > getCofreBalance()) {
+    showToast("Saldo insuficiente no cofre."); return;
+  }
+
+  try {
+    await addDoc(collection(db, "users", currentUserId, "cofreTransactions"), {
+      type: cofreModalType,
+      amount,
+      description: description || (cofreModalType === "deposit" ? "Depósito" : "Retirada"),
+      date: getLocalDateString(),
+      createdAt: new Date(),
+    });
+    cofreFormModal.classList.add("hidden");
+    showToast(cofreModalType === "deposit" ? "✅ Depositado no cofre!" : "✅ Retirado do cofre!");
+    await loadCofre();
+  } catch {
+    showToast("Erro ao salvar. Tente novamente.");
+  }
+});
 
 const today = getLocalDateString();
 document.getElementById("incomeDate").value = today;
@@ -514,6 +611,17 @@ document.getElementById("shortcutAndroidMobileBtn")?.addEventListener("click", (
 document.getElementById("logoutMobileBtn")?.addEventListener("click", () => {
   mobileMenu.classList.remove("open");
   document.getElementById("logoutBtn").click();
+});
+
+function scrollToCofre() {
+  cofreModal.classList.remove("hidden");
+}
+
+document.getElementById("cofreHeaderBtn")?.addEventListener("click", scrollToCofre);
+
+document.getElementById("cofreMobileBtn")?.addEventListener("click", () => {
+  mobileMenu.classList.remove("open");
+  scrollToCofre();
 });
 
 function renderTransactions() {

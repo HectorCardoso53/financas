@@ -23,6 +23,9 @@
             <button id="openChartBtnHeader" class="btn-secondary chart-btn-header" title="Resumo anual">
                 <i class="bi bi-graph-up"></i> Resumo
             </button>
+            <button id="cofreHeaderBtn" class="btn-secondary btn-cofre-header" title="Meu Cofre">
+                <i class="bi bi-safe2"></i> Cofre
+            </button>
             <button id="shortcutIosSetupBtn" class="btn-secondary" title="Configurar Atalho iPhone">
                 <i class="bi bi-phone"></i> iPhone
             </button>
@@ -44,6 +47,9 @@
     <div class="mobile-menu" id="mobileMenu">
         <button id="openChartBtnMobile" class="mobile-menu-item">
             <i class="bi bi-graph-up"></i> Resumo Anual
+        </button>
+        <button id="cofreMobileBtn" class="mobile-menu-item">
+            🔐 Meu Cofre
         </button>
         <button id="shortcutIosMobileBtn" class="mobile-menu-item">
             <i class="bi bi-phone"></i> Atalho iPhone
@@ -217,10 +223,81 @@
                 </div>
             </div>
         </div>
+
     </div>
 
 
     <script type="module" src="js/app.js"></script>
+
+    <!-- ===== MODAL COFRE PRINCIPAL ===== -->
+    <div id="cofreModal" class="cofre-overlay hidden">
+        <div class="cofre-modal">
+
+            <!-- Header do modal -->
+            <div class="cofre-modal-header">
+                <div class="cofre-modal-header-left">
+                    <span class="cofre-modal-emoji">🔐</span>
+                    <div>
+                        <h2>Meu Cofre</h2>
+                        <p>Dinheiro guardado com segurança</p>
+                    </div>
+                </div>
+                <button class="cofre-modal-close" id="closeCofreBtn">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <!-- Saldo em destaque -->
+            <div class="cofre-modal-saldo">
+                <span class="cofre-saldo-label">Saldo guardado</span>
+                <span class="cofre-saldo-valor" id="cofreBalance">R$ 0,00</span>
+            </div>
+
+            <!-- Botões de ação -->
+            <div class="cofre-modal-actions">
+                <button class="cofre-action-btn cofre-depositar" id="cofreDepositBtn">
+                    <i class="bi bi-plus-circle-fill"></i>
+                    <span>Depositar</span>
+                </button>
+                <button class="cofre-action-btn cofre-retirar" id="cofreWithdrawBtn">
+                    <i class="bi bi-dash-circle-fill"></i>
+                    <span>Retirar</span>
+                </button>
+            </div>
+
+            <!-- Histórico -->
+            <div class="cofre-modal-historico">
+                <h3><i class="bi bi-clock-history"></i> Movimentações</h3>
+                <div id="cofreHistory">
+                    <div class="empty-state"><p>Nenhuma movimentação ainda</p></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Sub-modal: Depositar / Retirar -->
+    <div id="cofreFormModal" class="cofre-overlay hidden" style="z-index:10001">
+        <div class="cofre-form-card">
+            <button class="cofre-modal-close" id="closeCofreFormBtn">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <div class="cofre-modal-emoji" id="cofreFormIcon">💰</div>
+            <h2 class="cofre-form-title" id="cofreModalTitle">Depositar</h2>
+            <p class="cofre-form-balance">Saldo: <span id="cofreModalBalanceDisplay">R$ 0,00</span></p>
+            <div class="form-group">
+                <label>Valor (R$)</label>
+                <input type="number" id="cofreAmount" placeholder="0,00" step="0.01" min="0.01">
+            </div>
+            <div class="form-group">
+                <label>Descrição <span style="opacity:0.45;font-weight:400">(opcional)</span></label>
+                <input type="text" id="cofreDescription" placeholder="Ex: Reserva de emergência">
+            </div>
+            <button class="btn cofre-confirm-btn" id="cofreConfirmBtn">
+                <i class="bi bi-check-lg"></i> Confirmar
+            </button>
+        </div>
+    </div>
 
     <!-- 🎛️ Barra fixa de ações -->
     <div class="action-bar">
