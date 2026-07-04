@@ -230,7 +230,7 @@ cofreModal.addEventListener("click", (e) => {
 });
 
 document.getElementById("cofreConfirmBtn").addEventListener("click", async () => {
-  const amount = parseFloat(document.getElementById("cofreAmount").value);
+  const amount = parseBRL(document.getElementById("cofreAmount").value);
   const description = document.getElementById("cofreDescription").value.trim();
 
   if (!amount || amount <= 0) { showToast("Informe um valor válido."); return; }
@@ -263,7 +263,7 @@ document.getElementById("incomeForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const description = document.getElementById("incomeDescription").value;
-  const amount = parseFloat(document.getElementById("incomeAmount").value);
+  const amount = parseBRL(document.getElementById("incomeAmount").value);
   const category = document.getElementById("incomeCategory").value;
   const date = document.getElementById("incomeDate").value;
 
@@ -301,7 +301,7 @@ document.getElementById("expenseForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const description = document.getElementById("expenseDescription").value;
-  const amount = parseFloat(document.getElementById("expenseAmount").value);
+  const amount = parseBRL(document.getElementById("expenseAmount").value);
   const category = document.getElementById("expenseCategory").value;
   const date = document.getElementById("expenseDate").value;
 
@@ -727,6 +727,28 @@ document.getElementById("expenseList").addEventListener("change", (e) => {
 function formatCurrency(value) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
+
+function applyMaskBRL(input) {
+  input.addEventListener("input", (e) => {
+    const digits = e.target.value.replace(/\D/g, "");
+    const num = parseInt(digits || "0") / 100;
+    e.target.value = num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  });
+  input.addEventListener("focus", (e) => {
+    if (e.target.value === "") e.target.value = "R$ 0,00";
+  });
+  input.addEventListener("blur", (e) => {
+    if (e.target.value === "R$ 0,00") e.target.value = "";
+  });
+}
+
+function parseBRL(value) {
+  return parseFloat(value.replace(/[R$\s.]/g, "").replace(",", ".")) || 0;
+}
+
+applyMaskBRL(document.getElementById("incomeAmount"));
+applyMaskBRL(document.getElementById("expenseAmount"));
+applyMaskBRL(document.getElementById("cofreAmount"));
 
 function formatDate(dateString) {
   const date = new Date(dateString + "T00:00:00");
