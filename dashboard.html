@@ -236,7 +236,7 @@
             <!-- Header do modal -->
             <div class="cofre-modal-header">
                 <div class="cofre-modal-header-left">
-                    <span class="cofre-modal-emoji">🔐</span>
+                    <i class="bi bi-safe2 cofre-modal-emoji"></i>
                     <div>
                         <h2>Meu Cofre</h2>
                         <p>Dinheiro guardado com segurança</p>
@@ -249,7 +249,7 @@
 
             <!-- Saldo em destaque -->
             <div class="cofre-modal-saldo">
-                <span class="cofre-saldo-label">Saldo guardado</span>
+                <i class="bi bi-safe2 cofre-saldo-icon"></i>
                 <span class="cofre-saldo-valor" id="cofreBalance">R$ 0,00</span>
             </div>
 
@@ -295,6 +295,36 @@
             </div>
             <button class="btn cofre-confirm-btn" id="cofreConfirmBtn">
                 <i class="bi bi-check-lg"></i> Confirmar
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Editar Transação -->
+    <div id="editModal" class="cofre-overlay hidden" style="z-index:10001">
+        <div class="cofre-form-card">
+            <button class="cofre-modal-close" id="closeEditBtn">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <div class="cofre-modal-emoji" id="editModalIcon"><i class="bi bi-pencil-square"></i></div>
+            <h2 class="cofre-form-title" id="editModalTitle">Editar</h2>
+            <div class="form-group">
+                <label>Descrição</label>
+                <input type="text" id="editDescription" placeholder="Descrição">
+            </div>
+            <div class="form-group">
+                <label>Valor (R$)</label>
+                <input type="text" id="editAmount" placeholder="R$ 0,00" inputmode="numeric">
+            </div>
+            <div class="form-group">
+                <label>Categoria</label>
+                <select id="editCategory"></select>
+            </div>
+            <div class="form-group">
+                <label>Data</label>
+                <input type="date" id="editDate">
+            </div>
+            <button class="btn cofre-confirm-btn" id="editConfirmBtn">
+                <i class="bi bi-check-lg"></i> Salvar
             </button>
         </div>
     </div>

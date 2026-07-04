@@ -309,12 +309,36 @@ header h1:hover {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
 }
 
+.btn-delete,
+.btn-edit {
+    padding: 6px 12px;
+    font-size: 0.85em;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    margin: 0;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    transition: opacity 0.2s, transform 0.15s;
+}
+
 .btn-delete {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    padding: 6px 12px;
-    font-size: 0.9em;
-    width: auto;
-    margin: 0;
+}
+
+.btn-edit {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.btn-delete:hover,
+.btn-edit:hover {
+    opacity: 0.82;
+    transform: translateY(-1px);
 }
 
 .transaction-list {
@@ -332,6 +356,13 @@ header h1:hover {
     transition: background-color 0.2s ease, border-left-color 0.2s ease;
     border-radius: 6px;
     margin-bottom: 2px;
+}
+
+.transaction-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
 .transaction-item:hover {
@@ -611,6 +642,7 @@ header h1:hover {
 
 
 /* ===== LOGIN PAGE ===== */
+/* ===== LOGIN PAGE ===== */
 .login-page {
     display: flex;
     justify-content: center;
@@ -621,106 +653,105 @@ header h1:hover {
     position: relative;
 }
 
-/* Orbs de fundo */
 .bg-orb {
     position: fixed;
     border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.35;
+    filter: blur(100px);
     pointer-events: none;
-    animation: orbFloat 8s ease-in-out infinite;
+    animation: orbFloat 10s ease-in-out infinite;
 }
 
 .bg-orb-1 {
-    width: 500px;
-    height: 500px;
-    background: #1e3a5f;
-    top: -150px;
-    left: -150px;
+    width: 560px;
+    height: 560px;
+    background: radial-gradient(circle, #1e4d8c 0%, transparent 70%);
+    top: -180px;
+    left: -180px;
+    opacity: 0.55;
     animation-delay: 0s;
 }
 
 .bg-orb-2 {
-    width: 400px;
-    height: 400px;
-    background: #1a2a1a;
-    bottom: -100px;
-    right: -100px;
-    animation-delay: -3s;
+    width: 420px;
+    height: 420px;
+    background: radial-gradient(circle, #b45309 0%, transparent 70%);
+    bottom: -120px;
+    right: -120px;
+    opacity: 0.4;
+    animation-delay: -4s;
 }
 
 .bg-orb-3 {
-    width: 280px;
-    height: 280px;
-    background: #2d1f0a;
-    bottom: 25%;
-    left: 5%;
-    animation-delay: -5s;
-    opacity: 0.6;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, #0e3460 0%, transparent 70%);
+    bottom: 20%;
+    left: 8%;
+    opacity: 0.45;
+    animation-delay: -7s;
 }
 
 @keyframes orbFloat {
     0%, 100% { transform: translateY(0) scale(1); }
-    50%       { transform: translateY(-30px) scale(1.05); }
+    50%       { transform: translateY(-28px) scale(1.04); }
 }
 
 .login-box {
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: #132337;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-top: 3px solid #f59e0b;
     padding: 48px 40px;
-    border-radius: 28px;
+    border-radius: 20px;
     width: 100%;
     max-width: 420px;
-    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(245,158,11,0.08);
     text-align: center;
-    animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    animation: fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1);
     position: relative;
     z-index: 1;
 }
 
 @keyframes fadeUp {
-    from {
-        transform: translateY(30px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+    from { transform: translateY(28px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
 }
 
-/* Logo circular */
 .login-logo {
-    width: 72px;
-    height: 72px;
+    width: 80px;
+    height: 80px;
     background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 20px;
-    font-size: 34px;
+    margin: 0 auto 22px;
+    font-size: 36px;
     color: #0a0f1c;
-    box-shadow: 0 8px 28px rgba(245, 158, 11, 0.35);
+    box-shadow: 0 0 0 8px rgba(245,158,11,0.12), 0 10px 32px rgba(245,158,11,0.4);
+    animation: logoPulse 3s ease-in-out infinite;
+}
+
+@keyframes logoPulse {
+    0%, 100% { box-shadow: 0 0 0 8px rgba(245,158,11,0.12), 0 10px 32px rgba(245,158,11,0.4); }
+    50%       { box-shadow: 0 0 0 14px rgba(245,158,11,0.07), 0 14px 40px rgba(245,158,11,0.55); }
 }
 
 .login-box h1 {
+    font-family: 'Outfit', sans-serif;
     color: #ffffff;
-    margin-bottom: 8px;
-    font-size: 1.7em;
+    margin-bottom: 6px;
+    font-size: 1.75em;
     font-weight: 700;
-    letter-spacing: -0.3px;
+    letter-spacing: -0.5px;
 }
 
 .login-box .subtitle {
-    color: rgba(255, 255, 255, 0.72);
-    font-size: 0.92em;
-    margin-bottom: 30px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.88em;
+    margin-bottom: 32px;
+    font-weight: 400;
 }
 
-/* Inputs com ícone */
 .input-group {
     position: relative;
     margin-bottom: 14px;
@@ -732,56 +763,77 @@ header h1:hover {
     left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 17px;
-    color: rgba(255,255,255,0.6);
+    font-size: 16px;
+    color: rgba(255,255,255,0.35);
     pointer-events: none;
+    transition: color 0.2s;
+}
+
+.input-group:focus-within .input-icon {
+    color: #f59e0b;
 }
 
 .login-box input {
     width: 100%;
     padding: 14px 14px 14px 42px;
-    border-radius: 12px;
-    border: 1.5px solid rgba(255, 255, 255, 0.25);
-    background: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
-    font-size: 1em;
-    transition: border-color 0.25s ease, background 0.25s ease;
+    border-radius: 10px;
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    background: #1a2d44;
+    color: #e2e8f0;
+    font-size: 0.97em;
+    font-family: 'DM Sans', sans-serif;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    color-scheme: dark;
 }
 
 .login-box input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.3);
 }
 
 .login-box input:focus {
     outline: none;
-    border-color: rgba(255, 255, 255, 0.7);
-    background: rgba(255, 255, 255, 0.18);
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+    background: #1e3350;
 }
 
 .login-box .btn {
-    margin-top: 6px;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+    margin-top: 8px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
     color: #0a0f1c;
-    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
     font-size: 1em;
-    border-radius: 12px;
+    border-radius: 10px;
     padding: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+    letter-spacing: 0.2px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s;
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.45);
+    border: none;
+    cursor: pointer;
+    width: 100%;
 }
 
 .login-box .btn:hover {
-    opacity: 1;
     transform: translateY(-2px);
-    box-shadow: 0 14px 32px rgba(245, 158, 11, 0.55);
+    box-shadow: 0 14px 36px rgba(245, 158, 11, 0.6);
+    opacity: 0.95;
 }
 
 .login-box .btn:active {
     transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+}
+
+#authMessage {
+    margin-top: 14px;
+    font-size: 0.87em;
+    color: #f87171;
+    min-height: 20px;
 }
 
 .btn-secondary {
@@ -1151,14 +1203,17 @@ header h1:hover {
 .toggle-password {
     position: absolute;
     right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
     cursor: pointer;
-    font-size: 17px;
-    color: rgba(255, 255, 255, 0.6);
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.35);
     transition: color 0.2s ease;
+    user-select: none;
 }
 
 .toggle-password:hover {
-    color: #ffffff;
+    color: #f59e0b;
 }
 
 .progress-bar {
@@ -1166,10 +1221,11 @@ header h1:hover {
     top: 0;
     left: 0;
     width: 0%;
-    height: 4px;
-    background: linear-gradient(90deg, #4CAF50, #00c6ff);
+    height: 3px;
+    background: linear-gradient(90deg, #f59e0b, #d97706);
     transition: width 0.3s ease;
     z-index: 9999;
+    border-radius: 0 2px 2px 0;
 }
 
 /* Setinha estilo chat */
@@ -1350,7 +1406,8 @@ header h1:hover {
 
 .cofre-modal-emoji {
     font-size: 2em;
-    filter: drop-shadow(0 2px 8px rgba(245,158,11,0.4));
+    color: #f59e0b;
+    text-shadow: 0 2px 12px rgba(245,158,11,0.45);
 }
 
 .cofre-modal-header h2 {
@@ -1397,13 +1454,11 @@ header h1:hover {
     border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
-.cofre-saldo-label {
-    font-size: 0.78em;
-    color: #566a84;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    margin-bottom: 6px;
+.cofre-saldo-icon {
+    font-size: 2em;
+    color: #f59e0b;
+    margin-bottom: 8px;
+    opacity: 0.85;
 }
 
 .cofre-saldo-valor {
@@ -1647,8 +1702,8 @@ header h1:hover {
     margin: 0;
   }
 
-  .btn-delete {
-    margin-left: auto;
+  .btn-delete,
+  .btn-edit {
     padding: 4px 10px;
     font-size: 0.8em;
   }
@@ -1684,6 +1739,23 @@ header h1:hover {
     width: 46px;
     height: 46px;
     font-size: 20px;
+  }
+
+  /* ===== LOGIN MOBILE ===== */
+  .login-box {
+    padding: 36px 24px;
+    border-radius: 16px;
+    margin: 16px;
+  }
+
+  .login-logo {
+    width: 68px;
+    height: 68px;
+    font-size: 30px;
+  }
+
+  .login-box h1 {
+    font-size: 1.5em;
   }
 
 }

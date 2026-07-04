@@ -658,10 +658,15 @@ function renderTransactions() {
             </div>
             <div class="transaction-details">${formatDate(item.date)}</div>
           </div>
-          <div class="transaction-amount income">+${formatCurrency(item.amount)}</div>
-          <button class="btn btn-delete" data-delete data-id="${item.id}" data-type="income">
-            <i class="bi bi-trash"></i>
-          </button>
+          <div class="transaction-actions">
+            <div class="transaction-amount income">+${formatCurrency(item.amount)}</div>
+            <button class="btn btn-edit" data-edit data-id="${item.id}" data-type="income" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-delete" data-delete data-id="${item.id}" data-type="income">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
         </div>
       `;
       })
@@ -696,9 +701,12 @@ function renderTransactions() {
             </div>
             <div class="transaction-details">${formatDate(item.date)}</div>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;">
+          <div class="transaction-actions">
             <input type="checkbox" ${item.paid ? "checked" : ""} data-toggle-paid data-id="${item.id}" />
             <div class="transaction-amount expense">-${formatCurrency(item.amount)}</div>
+            <button class="btn btn-edit" data-edit data-id="${item.id}" data-type="expense" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </button>
             <button class="btn btn-delete" data-delete data-id="${item.id}" data-type="expense">
               <i class="bi bi-trash"></i>
             </button>
@@ -712,18 +720,99 @@ function renderTransactions() {
 
 // Event delegation para ações nas listas
 document.getElementById("incomeList").addEventListener("click", (e) => {
-  const btn = e.target.closest("[data-delete]");
-  if (btn) deleteTransaction(btn.dataset.id, btn.dataset.type);
+  const del = e.target.closest("[data-delete]");
+  if (del) deleteTransaction(del.dataset.id, del.dataset.type);
+  const edit = e.target.closest("[data-edit]");
+  if (edit) openEditModal(edit.dataset.id, edit.dataset.type);
 });
 
 document.getElementById("expenseList").addEventListener("click", (e) => {
-  const btn = e.target.closest("[data-delete]");
-  if (btn) deleteTransaction(btn.dataset.id, btn.dataset.type);
+  const del = e.target.closest("[data-delete]");
+  if (del) deleteTransaction(del.dataset.id, del.dataset.type);
+  const edit = e.target.closest("[data-edit]");
+  if (edit) openEditModal(edit.dataset.id, edit.dataset.type);
 });
 
 document.getElementById("expenseList").addEventListener("change", (e) => {
   const checkbox = e.target.closest("[data-toggle-paid]");
   if (checkbox) toggleExpensePaid(checkbox.dataset.id, checkbox.checked);
+});
+
+// ===== EDITAR TRANSAÇÃO =====
+let editingId = null;
+let editingType = null;
+
+const INCOME_CATEGORIES = [
+  { value: "salario", label: "Salário" },
+  { value: "freelance", label: "Freelance" },
+  { value: "investimentos", label: "Investimentos" },
+  { value: "outros", label: "Outros" },
+];
+
+const EXPENSE_CATEGORIES = [
+  { value: "alimentacao", label: "Alimentação" },
+  { value: "transporte", label: "Transporte" },
+  { value: "moradia", label: "Moradia" },
+  { value: "lazer", label: "Lazer" },
+  { value: "saude", label: "Saúde" },
+  { value: "educacao", label: "Educação" },
+  { value: "outros", label: "Outros" },
+];
+
+const editModal = document.getElementById("editModal");
+const editDescription = document.getElementById("editDescription");
+const editAmountInput = document.getElementById("editAmount");
+const editCategory = document.getElementById("editCategory");
+const editDate = document.getElementById("editDate");
+
+applyMaskBRL(editAmountInput);
+
+function openEditModal(id, type) {
+  const list = type === "income" ? incomes : expenses;
+  const item = list.find((i) => i.id === id);
+  if (!item) return;
+
+  editingId = id;
+  editingType = type;
+
+  document.getElementById("editModalTitle").textContent = type === "income" ? "Editar Receita" : "Editar Despesa";
+  document.getElementById("editModalIcon").innerHTML = type === "income"
+    ? '<i class="bi bi-wallet2"></i>'
+    : '<i class="bi bi-receipt"></i>';
+
+  const cats = type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  editCategory.innerHTML = cats.map((c) =>
+    `<option value="${c.value}" ${item.category === c.value ? "selected" : ""}>${c.label}</option>`
+  ).join("");
+
+  editDescription.value = item.description;
+  editAmountInput.value = formatCurrency(item.amount);
+  editDate.value = item.date;
+
+  editModal.classList.remove("hidden");
+}
+
+document.getElementById("closeEditBtn").addEventListener("click", () => editModal.classList.add("hidden"));
+editModal.addEventListener("click", (e) => { if (e.target === editModal) editModal.classList.add("hidden"); });
+
+document.getElementById("editConfirmBtn").addEventListener("click", async () => {
+  const description = editDescription.value.trim();
+  const amount = parseBRL(editAmountInput.value);
+  const category = editCategory.value;
+  const date = editDate.value;
+
+  if (!description || amount <= 0 || !date) {
+    showToast("Preencha todos os campos corretamente.", "error");
+    return;
+  }
+
+  const collectionName = editingType === "income" ? "incomes" : "expenses";
+  const ref = doc(db, "users", currentUserId, collectionName, editingId);
+  await updateDoc(ref, { description, amount, category, date });
+
+  editModal.classList.add("hidden");
+  showToast("Transação atualizada!", "success");
+  await loadData();
 });
 
 function formatCurrency(value) {
