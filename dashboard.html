@@ -26,6 +26,9 @@
             <button id="cofreHeaderBtn" class="btn-secondary btn-cofre-header" title="Meu Cofre">
                 <i class="bi bi-safe2"></i> Cofre
             </button>
+            <button id="ofxImportBtn" class="btn-secondary btn-ofx-header" title="Importar Extrato OFX">
+                <i class="bi bi-file-earmark-arrow-down"></i> Importar OFX
+            </button>
             <button id="shortcutIosSetupBtn" class="btn-secondary" title="Configurar Atalho iPhone">
                 <i class="bi bi-phone"></i> iPhone
             </button>
@@ -43,13 +46,19 @@
         </button>
     </header>
 
+    <!-- Input OFX oculto -->
+    <input type="file" id="ofxFileInput" accept=".ofx" style="display:none">
+
     <!-- Menu mobile -->
     <div class="mobile-menu" id="mobileMenu">
         <button id="openChartBtnMobile" class="mobile-menu-item">
             <i class="bi bi-graph-up"></i> Resumo Anual
         </button>
         <button id="cofreMobileBtn" class="mobile-menu-item">
-            🔐 Meu Cofre
+            <i class="bi bi-safe2"></i> Meu Cofre
+        </button>
+        <button id="ofxMobileBtn" class="mobile-menu-item">
+            <i class="bi bi-file-earmark-arrow-down"></i> Importar OFX
         </button>
         <button id="shortcutIosMobileBtn" class="mobile-menu-item">
             <i class="bi bi-phone"></i> Atalho iPhone
@@ -406,6 +415,20 @@
         </div>
     </div>
 
+    <!-- Modal Resumo OFX -->
+    <div id="ofxResumoModal" class="cofre-overlay hidden" style="z-index:10002">
+        <div class="ofx-resumo-card">
+            <button class="cofre-modal-close" id="closeOfxResumoBtn">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <div id="ofxResumoContent">
+                <div class="ofx-progresso">
+                    <div class="ofx-spinner"></div>
+                    <p>Processando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </body>
 

@@ -27,6 +27,8 @@ import {
   Legend,
 } from "https://cdn.jsdelivr.net/npm/chart.js@4.4.1/+esm";
 import { auth, db } from "./firebase-config.js";
+import { lerOFX, extrairTransacoes } from "./ofx-reader.js";
+import { importarTransacoes, carregarTransacoesOFX } from "./firebase-import.js";
 
 Chart.register(
   BarController,
@@ -150,10 +152,16 @@ async function loadData() {
       expenses.push({ id: docSnap.id, ...docSnap.data() });
     });
 
+    // Carrega transações importadas via OFX e mescla no dashboard
+    const ofx = await carregarTransacoesOFX(currentUserId, db);
+    incomes.push(...ofx.incomes);
+    expenses.push(...ofx.expenses);
+
     updateDashboard();
     renderTransactions();
     await loadCofre();
-  } catch {
+  } catch (err) {
+    console.error(err);
     showToast("Erro ao carregar dados. Verifique sua conexão.");
   }
 }
@@ -1162,3 +1170,107 @@ document.getElementById("shortcutIosSetupBtn").addEventListener("click", () => o
 document.getElementById("shortcutAndroidSetupBtn").addEventListener("click", () => openShortcutModal("android"));
 document.getElementById("closeShortcutBtn").addEventListener("click", closeShortcutModal);
 document.getElementById("closeShortcutBtn2").addEventListener("click", closeShortcutModal);
+
+// =====================================================
+// IMPORTAÇÃO OFX
+// =====================================================
+
+const ofxFileInput = document.getElementById("ofxFileInput");
+const ofxImportBtn = document.getElementById("ofxImportBtn");
+const ofxMobileBtn = document.getElementById("ofxMobileBtn");
+const ofxResumoModal = document.getElementById("ofxResumoModal");
+const ofxResumoContent = document.getElementById("ofxResumoContent");
+
+// Abre o seletor de arquivo ao clicar no botão (header ou mobile)
+function triggerOFXImport() {
+  mobileMenu.classList.remove("open");
+  ofxFileInput.click();
+}
+
+if (ofxImportBtn) ofxImportBtn.addEventListener("click", triggerOFXImport);
+if (ofxMobileBtn) ofxMobileBtn.addEventListener("click", triggerOFXImport);
+
+document.getElementById("closeOfxResumoBtn")?.addEventListener("click", () => {
+  ofxResumoModal.classList.add("hidden");
+});
+
+ofxFileInput.addEventListener("change", async (e) => {
+  const arquivo = e.target.files[0];
+  if (!arquivo) return;
+  // Reseta o input para permitir reimportar o mesmo arquivo
+  e.target.value = "";
+
+  mostrarProgressoOFX("Lendo arquivo...");
+
+  try {
+    const texto = await lerOFX(arquivo);
+    mostrarProgressoOFX("Interpretando movimentações...");
+
+    const transacoes = extrairTransacoes(texto);
+    mostrarProgressoOFX(`${transacoes.length} movimentações encontradas. Salvando...`);
+
+    const resumo = await importarTransacoes(currentUserId, transacoes, db);
+    mostrarProgressoOFX("Atualizando dashboard...");
+
+    await loadData();
+    mostrarResumo(resumo);
+  } catch (err) {
+    ofxResumoModal.classList.add("hidden");
+    showToast(err.message || "Erro ao importar OFX. Verifique o arquivo.", "error");
+    console.error("Erro OFX:", err);
+  }
+});
+
+function mostrarProgressoOFX(mensagem) {
+  ofxResumoContent.innerHTML = `
+    <div class="ofx-progresso">
+      <div class="ofx-spinner"></div>
+      <p>${mensagem}</p>
+    </div>
+  `;
+  ofxResumoModal.classList.remove("hidden");
+}
+
+function mostrarResumo(resumo) {
+  const fmt = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+  ofxResumoContent.innerHTML = `
+    <div class="ofx-resumo-header">
+      <i class="bi bi-check-circle-fill ofx-check-icon"></i>
+      <h3>Importação concluída</h3>
+    </div>
+    <div class="ofx-resumo-stats">
+      <div class="ofx-stat">
+        <span class="ofx-stat-num">${resumo.total}</span>
+        <span class="ofx-stat-label">Encontradas</span>
+      </div>
+      <div class="ofx-stat ofx-stat-nova">
+        <span class="ofx-stat-num">${resumo.novas}</span>
+        <span class="ofx-stat-label">Novas</span>
+      </div>
+      <div class="ofx-stat ofx-stat-ignorada">
+        <span class="ofx-stat-num">${resumo.ignoradas}</span>
+        <span class="ofx-stat-label">Ignoradas</span>
+      </div>
+    </div>
+    <div class="ofx-resumo-valores">
+      <div class="ofx-valor-linha ofx-receita">
+        <span><i class="bi bi-arrow-up-circle-fill"></i> Receitas</span>
+        <strong>${fmt(resumo.totalReceitas)}</strong>
+      </div>
+      <div class="ofx-valor-linha ofx-despesa">
+        <span><i class="bi bi-arrow-down-circle-fill"></i> Despesas</span>
+        <strong>${fmt(resumo.totalDespesas)}</strong>
+      </div>
+      <div class="ofx-valor-linha ofx-saldo">
+        <span><i class="bi bi-gem"></i> Saldo</span>
+        <strong>${fmt(resumo.saldo)}</strong>
+      </div>
+    </div>
+    <button class="btn ofx-fechar-btn" id="closeOfxResumoBtn2">Fechar</button>
+  `;
+
+  document.getElementById("closeOfxResumoBtn2").addEventListener("click", () => {
+    ofxResumoModal.classList.add("hidden");
+  });
+}
