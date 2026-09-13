@@ -803,6 +803,8 @@
         });
         catName = badgeEl.textContent.trim();
       }
+      // Usa data-date (YYYY-MM-DD) sempre que disponível — evita problemas de locale
+      var isoDate = row.dataset.date || '';
       var tiDateEl = row.querySelector('.ti-date');
       var dateStr = tiDateEl
         ? tiDateEl.textContent.trim()
@@ -818,7 +820,7 @@
       var importado = !!origemEl;
       var origem    = origemEl ? origemEl.textContent.trim() : '';
 
-      items.push({ desc:desc, catClass:catClass, catName:catName, dateStr:dateStr,
+      items.push({ desc:desc, catClass:catClass, catName:catName, dateStr:dateStr, isoDate:isoDate,
                    amtStr:amtStr, amtRaw:amtRaw, paid:paid, id:id,
                    type:type, importado:importado, origem:origem });
     });
@@ -1109,11 +1111,13 @@
     var desp = parseTxItems('expenseList', 'expense');
     var rec  = parseTxItems('incomeList',  'income');
 
+    // Chave interna YYYY-MM-DD (mais confiável que texto formatado)
     var dayMap = {};
     desp.concat(rec).forEach(function(it) {
-      if (!it.dateStr) return;
-      if (!dayMap[it.dateStr]) dayMap[it.dateStr] = [];
-      dayMap[it.dateStr].push(it);
+      var key = it.isoDate || it.dateStr;
+      if (!key) return;
+      if (!dayMap[key]) dayMap[key] = [];
+      dayMap[key].push(it);
     });
 
     var firstDay  = new Date(year, month, 1);
@@ -1135,7 +1139,7 @@
     }
 
     for (var day = 1; day <= numDays; day++) {
-      var key     = calPad(day) + '/' + calPad(month + 1) + '/' + year;
+      var key     = year + '-' + calPad(month + 1) + '-' + calPad(day);
       var items   = dayMap[key] || [];
       var shown   = items.slice(0, 2);
       var more    = items.length - shown.length;
