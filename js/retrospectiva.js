@@ -196,36 +196,57 @@ function buildChart(chartSummaries) {
   const C = window.Chart;
   if (!C) return;
 
-  const incBg  = chartSummaries.map(() => 'rgba(16,185,129,0.6)');
-  const expBg  = chartSummaries.map(() => 'rgba(239,68,68,0.6)');
-  const incBdr = chartSummaries.map(() => '#10b981');
-  const expBdr = chartSummaries.map(() => '#ef4444');
+  let selectedIdx = null;
 
   retroChart = new C(canvas, {
-    type: 'bar',
+    type: 'line',
     data: {
       labels: chartSummaries.map(s => MONTH_SHORT[s.month]),
       datasets: [
-        { label: 'Receitas', data: chartSummaries.map(s => s.receitas),
-          backgroundColor: incBg, borderColor: incBdr, borderWidth: 1.5, borderRadius: 5, borderSkipped: false },
-        { label: 'Despesas', data: chartSummaries.map(s => s.despesas),
-          backgroundColor: expBg, borderColor: expBdr, borderWidth: 1.5, borderRadius: 5, borderSkipped: false },
+        {
+          label: 'Receitas',
+          data: chartSummaries.map(s => s.receitas),
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16,185,129,0.12)',
+          borderWidth: 2.5,
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: chartSummaries.map(() => '#10b981'),
+          pointBorderColor: '#0d1b2a',
+          pointBorderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        },
+        {
+          label: 'Despesas',
+          data: chartSummaries.map(s => s.despesas),
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239,68,68,0.08)',
+          borderWidth: 2.5,
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: chartSummaries.map(() => '#ef4444'),
+          pointBorderColor: '#0d1b2a',
+          pointBorderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        },
       ],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      cursor: 'pointer',
       onClick(_, elements) {
         if (!elements.length) return;
         const i    = elements[0].index;
         const curr = chartSummaries[i];
         const prev = i > 0 ? chartSummaries[i - 1] : null;
-        // Highlight selected group
-        incBg.fill('rgba(16,185,129,0.55)');
-        expBg.fill('rgba(239,68,68,0.55)');
-        incBg[i] = 'rgba(16,185,129,1)';
-        expBg[i] = 'rgba(239,68,68,1)';
+        selectedIdx = i;
+        // Destaca ponto selecionado
+        retroChart.data.datasets[0].pointRadius = chartSummaries.map((_, j) => j === i ? 8 : 5);
+        retroChart.data.datasets[1].pointRadius = chartSummaries.map((_, j) => j === i ? 8 : 5);
+        retroChart.data.datasets[0].pointBackgroundColor = chartSummaries.map((_, j) => j === i ? '#34d399' : '#10b981');
+        retroChart.data.datasets[1].pointBackgroundColor = chartSummaries.map((_, j) => j === i ? '#f87171' : '#ef4444');
         retroChart.update('none');
         openModal(curr, prev);
       },

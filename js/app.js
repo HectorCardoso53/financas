@@ -624,6 +624,22 @@ function updateDashboard() {
   const allExpense = expenses.filter((e) => e.paid && !e.cartaoDetalhe).reduce((sum, item) => sum + item.amount, 0);
   const saldoAcumulado = saldoInicial + allIncome - allExpense - getCofreBalance();
 
+  // Carry-forward: saldo acumulado até o início do mês visualizado
+  const selMonth = selectedMonth !== "" ? parseInt(selectedMonth) : new Date().getMonth();
+  const selYear  = selectedYear  !== "" ? parseInt(selectedYear)  : new Date().getFullYear();
+  const isBeforeSelected = (dateStr) => {
+    if (!dateStr) return false;
+    const [y, m] = dateStr.split("-");
+    const dy = parseInt(y), dm = parseInt(m) - 1;
+    return dy < selYear || (dy === selYear && dm < selMonth);
+  };
+  const incBefore = incomes.filter((t) => isBeforeSelected(t.date));
+  const expBefore = expenses.filter((t) => t.paid && !t.cartaoDetalhe && isBeforeSelected(t.date));
+  const saldoInicialMes = saldoInicial
+    + incBefore.reduce((s, t) => s + t.amount, 0)
+    - expBefore.reduce((s, t) => s + t.amount, 0);
+  window._btlInicialMes = formatCurrency(saldoInicialMes);
+
   document.getElementById("totalIncome").textContent = formatCurrency(totalIncome);
   document.getElementById("totalExpense").textContent = formatCurrency(totalExpense);
   document.getElementById("totalProfit").textContent = formatCurrency(profit);

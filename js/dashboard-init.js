@@ -462,7 +462,7 @@
 
       var match = saldo.match(/[\d.,]+/);
       var si = match ? 'R$ ' + match[0].replace('.',',') : 'R$ 0,00';
-      if(el('btlInicial'))  el('btlInicial').textContent  = si;
+      if(el('btlInicial'))  el('btlInicial').textContent  = window._btlInicialMes || si;
       if(el('btlPrevisto')) el('btlPrevisto').textContent = balance;
       if(el('vgSaldo'))     el('vgSaldo').textContent     = balance;
 
