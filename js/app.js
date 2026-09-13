@@ -57,6 +57,7 @@ let incomes = [];
 let expenses = [];
 let selectedMonth = "";
 let selectedYear = "";
+let saldoInicial = 0;
 
 function getLocalDateString(date = new Date()) {
   const year = date.getFullYear();
@@ -108,6 +109,8 @@ function showToast(message, type = "error") {
   }, TIMEOUTS.TOAST_DISMISS);
 }
 
+window.showToast = showToast;
+
 function validateTransactionInput(description, amount, date) {
   if (!description.trim()) return "Descrição é obrigatória.";
   if (isNaN(amount) || amount <= 0) return "Informe um valor maior que zero.";
@@ -152,6 +155,13 @@ async function loadData() {
       expenses.push({ id: docSnap.id, ...docSnap.data() });
     });
 
+    // Carrega saldo inicial definido pelo usuário
+    const configRef = doc(db, "users", currentUserId);
+    const configSnap = await getDoc(configRef);
+    saldoInicial = configSnap.exists() && configSnap.data().saldoInicial !== undefined ? configSnap.data().saldoInicial : 0;
+    const labelEl = document.getElementById("saldoInicialLabel");
+    if (labelEl) labelEl.textContent = saldoInicial !== 0 ? `base: ${formatCurrency(saldoInicial)}` : "clique para calibrar";
+
     // Carrega transações importadas via OFX e mescla no dashboard
     const ofx = await carregarTransacoesOFX(currentUserId, db);
     incomes.push(...ofx.incomes);
@@ -160,6 +170,12 @@ async function loadData() {
     updateDashboard();
     renderTransactions();
     await loadCofre();
+
+    // Expõe dados para módulos externos (retrospectiva, etc.)
+    window._financeIncomes = incomes;
+    window._financeExpenses = expenses;
+    window._financeUserId = currentUserId;
+    window.dispatchEvent(new CustomEvent('financialDataReady'));
   } catch (err) {
     console.error(err);
     showToast("Erro ao carregar dados. Verifique sua conexão.");
@@ -204,6 +220,93 @@ function renderCofre() {
   `).join("");
   updateDashboard();
 }
+
+// ===== SALDO INICIAL =====
+const saldoInicialModal = document.getElementById("saldoInicialModal");
+const saldoInicialInput = document.getElementById("saldoInicialInput");
+const saldoBancarioInput = document.getElementById("saldoBancarioInput");
+
+applyMaskBRL(saldoInicialInput);
+applyMaskBRL(saldoBancarioInput);
+
+function abrirSaldoModal() {
+  saldoInicialInput.value = saldoInicial !== 0 ? formatCurrency(Math.abs(saldoInicial)) : "";
+  saldoBancarioInput.value = "";
+  document.getElementById("calibracaoPreview").classList.add("hidden");
+  saldoInicialModal.classList.remove("hidden");
+}
+
+document.getElementById("cardSaldo").addEventListener("click", abrirSaldoModal);
+
+document.getElementById("closeSaldoInicialBtn").addEventListener("click", () =>
+  saldoInicialModal.classList.add("hidden")
+);
+
+saldoInicialModal.addEventListener("click", (e) => {
+  if (e.target === saldoInicialModal) saldoInicialModal.classList.add("hidden");
+});
+
+// Tabs do saldo modal
+document.getElementById("tabCalibar").addEventListener("click", () => {
+  document.getElementById("tabCalibar").classList.add("saldo-tab-active");
+  document.getElementById("tabDireto").classList.remove("saldo-tab-active");
+  document.getElementById("saldoPeloBanco").classList.remove("hidden");
+  document.getElementById("saldoDireto").classList.add("hidden");
+});
+
+document.getElementById("tabDireto").addEventListener("click", () => {
+  document.getElementById("tabDireto").classList.add("saldo-tab-active");
+  document.getElementById("tabCalibar").classList.remove("saldo-tab-active");
+  document.getElementById("saldoDireto").classList.remove("hidden");
+  document.getElementById("saldoPeloBanco").classList.add("hidden");
+});
+
+// Calibrar: mostra preview ao digitar
+saldoBancarioInput.addEventListener("input", () => {
+  const saldoBanco = parseBRL(saldoBancarioInput.value);
+  if (!saldoBanco) {
+    document.getElementById("calibracaoPreview").classList.add("hidden");
+    return;
+  }
+  const totalReceitas = incomes.reduce((s, i) => s + i.amount, 0);
+  const totalDespesas = expenses.filter((e) => e.paid && !e.cartaoDetalhe).reduce((s, e) => s + e.amount, 0);
+  const ajuste = saldoBanco - (totalReceitas - totalDespesas - getCofreBalance());
+  const preview = document.getElementById("calibracaoPreview");
+  preview.classList.remove("hidden");
+  preview.innerHTML = `
+    Banco: <strong>${formatCurrency(saldoBanco)}</strong><br>
+    App calcula: <strong>${formatCurrency(totalReceitas - totalDespesas - getCofreBalance())}</strong><br>
+    Ajuste necessário: <span class="preview-resultado">${formatCurrency(ajuste)}</span>
+  `;
+});
+
+// Salvar calibração
+document.getElementById("calibrarSaldoBtn").addEventListener("click", async () => {
+  const saldoBanco = parseBRL(saldoBancarioInput.value);
+  if (!saldoBanco && saldoBanco !== 0) { showToast("Informe o saldo do banco."); return; }
+  const totalReceitas = incomes.reduce((s, i) => s + i.amount, 0);
+  const totalDespesas = expenses.filter((e) => e.paid && !e.cartaoDetalhe).reduce((s, e) => s + e.amount, 0);
+  const ajuste = saldoBanco - (totalReceitas - totalDespesas - getCofreBalance());
+  const ref = doc(db, "users", currentUserId);
+  await setDoc(ref, { saldoInicial: ajuste }, { merge: true });
+  saldoInicial = ajuste;
+  saldoInicialModal.classList.add("hidden");
+  document.getElementById("saldoInicialLabel").textContent = `base: ${formatCurrency(ajuste)}`;
+  updateDashboard();
+  showToast(`Saldo calibrado! Ajuste: ${formatCurrency(ajuste)}`, "success");
+});
+
+// Salvar manual
+document.getElementById("salvarSaldoInicialBtn").addEventListener("click", async () => {
+  const valor = parseBRL(saldoInicialInput.value);
+  const ref = doc(db, "users", currentUserId);
+  await setDoc(ref, { saldoInicial: valor }, { merge: true });
+  saldoInicial = valor;
+  saldoInicialModal.classList.add("hidden");
+  document.getElementById("saldoInicialLabel").textContent = `base: ${formatCurrency(valor)}`;
+  updateDashboard();
+  showToast("Saldo inicial salvo!", "success");
+});
 
 const cofreModal = document.getElementById("cofreModal");
 
@@ -313,6 +416,7 @@ document.getElementById("expenseForm").addEventListener("submit", async (e) => {
   const amount = parseBRL(document.getElementById("expenseAmount").value);
   const category = document.getElementById("expenseCategory").value;
   const date = document.getElementById("expenseDate").value;
+  const cartaoId = document.getElementById("expenseCartaoId")?.value || null;
 
   const validationError = validateTransactionInput(description, amount, date);
   if (validationError) {
@@ -324,15 +428,18 @@ document.getElementById("expenseForm").addEventListener("submit", async (e) => {
   btn.disabled = true;
 
   try {
-    await addDoc(collection(db, "users", currentUserId, "expenses"), {
+    const expData = {
       description,
       amount,
       category,
       date,
       dueDate: date,
       createdAt: new Date(),
-      paid: true,
-    });
+      paid: !cartaoId,
+    };
+    if (cartaoId) expData.cartaoId = cartaoId;
+    await addDoc(collection(db, "users", currentUserId, "expenses"), expData);
+    document.getElementById("expenseCartaoId").value = '';
 
     e.target.reset();
     document.getElementById("expenseDate").value = today;
@@ -344,6 +451,59 @@ document.getElementById("expenseForm").addEventListener("submit", async (e) => {
     btn.disabled = false;
   }
 });
+
+// Funções globais usadas pelos modais do dashboard.html
+window.saveExpense = async function(data) {
+  if (!currentUserId) { showToast("Usuário não autenticado."); return false; }
+  const amount = typeof data.amount === 'number' ? data.amount : parseBRL(String(data.amount));
+  const validationError = validateTransactionInput(data.description, amount, data.date);
+  if (validationError) { showToast(validationError); return false; }
+  try {
+    const expData = {
+      description: data.description,
+      amount,
+      category: data.category || 'outros',
+      date: data.date,
+      dueDate: data.date,
+      createdAt: new Date(),
+      paid: !data.cartaoId,
+      recorrente: !!data.recorrente,
+    };
+    if (data.cartaoId) { expData.cartaoId = data.cartaoId; expData.cartaoDetalhe = true; }
+    await addDoc(collection(db, "users", currentUserId, "expenses"), expData);
+    showToast("Despesa adicionada com sucesso!", "success");
+    loadData();
+    return true;
+  } catch (err) {
+    console.error(err);
+    showToast("Erro ao adicionar despesa. Tente novamente.");
+    return false;
+  }
+};
+
+window.saveIncome = async function(data) {
+  if (!currentUserId) { showToast("Usuário não autenticado."); return false; }
+  const amount = typeof data.amount === 'number' ? data.amount : parseBRL(String(data.amount));
+  const validationError = validateTransactionInput(data.description, amount, data.date);
+  if (validationError) { showToast(validationError); return false; }
+  try {
+    await addDoc(collection(db, "users", currentUserId, "incomes"), {
+      description: data.description,
+      amount,
+      category: data.category || 'outros',
+      date: data.date,
+      createdAt: new Date(),
+      recorrente: !!data.recorrente,
+    });
+    showToast("Receita adicionada com sucesso!", "success");
+    loadData();
+    return true;
+  } catch (err) {
+    console.error(err);
+    showToast("Erro ao adicionar receita. Tente novamente.");
+    return false;
+  }
+};
 
 function analyzeYear(year) {
   const yearIncomes = incomes.filter((i) => new Date(i.date).getFullYear() === year);
@@ -454,17 +614,20 @@ document.getElementById("closeRobotBtn2").addEventListener("click", closeRobot);
 
 function updateDashboard() {
   const filteredIncomes = filterByDate(incomes);
-  const filteredExpenses = filterByDate(expenses).filter((e) => e.paid);
+  const filteredExpenses = filterByDate(expenses).filter((e) => e.paid && !e.cartaoDetalhe);
 
   const totalIncome = filteredIncomes.reduce((sum, item) => sum + item.amount, 0);
   const totalExpense = filteredExpenses.reduce((sum, item) => sum + item.amount, 0);
   const profit = totalIncome - totalExpense;
 
-  const saldo = profit - getCofreBalance();
+  const allIncome = incomes.reduce((sum, item) => sum + item.amount, 0);
+  const allExpense = expenses.filter((e) => e.paid && !e.cartaoDetalhe).reduce((sum, item) => sum + item.amount, 0);
+  const saldoAcumulado = saldoInicial + allIncome - allExpense - getCofreBalance();
+
   document.getElementById("totalIncome").textContent = formatCurrency(totalIncome);
   document.getElementById("totalExpense").textContent = formatCurrency(totalExpense);
-  document.getElementById("totalProfit").textContent = formatCurrency(saldo);
-  document.getElementById("currentBalance").textContent = formatCurrency(saldo);
+  document.getElementById("totalProfit").textContent = formatCurrency(profit);
+  document.getElementById("currentBalance").textContent = formatCurrency(saldoAcumulado);
 }
 
 function filterByDate(list) {
@@ -566,6 +729,7 @@ const openChartBtn = document.getElementById("openChartBtn");
 const chartModal = document.getElementById("chartModal");
 
 function openChart() {
+  if (!chartModal) return;
   if (selectedYear === "") {
     alert("Selecione um ANO para ver o resumo anual");
     return;
@@ -576,9 +740,6 @@ function openChart() {
 
 if (openChartBtn) openChartBtn.addEventListener("click", openChart);
 
-const openChartBtnHeader = document.getElementById("openChartBtnHeader");
-if (openChartBtnHeader) openChartBtnHeader.addEventListener("click", openChart);
-
 function closeChart() {
   chartModal.classList.add("hidden");
   if (financeChart) {
@@ -587,7 +748,7 @@ function closeChart() {
   }
 }
 
-document.getElementById("closeChartBtn").addEventListener("click", closeChart);
+document.getElementById("closeChartBtn")?.addEventListener("click", closeChart);
 
 // Hambúrguer menu
 const hamburgerBtn = document.getElementById("hamburgerBtn");
@@ -655,25 +816,26 @@ function renderTransactions() {
         const safeCategoryClass = escapeHtml(item.category);
         const safeCategoryName = escapeHtml(getCategoryName(item.category, "income"));
 
+        const origemBadge = item.importado
+          ? `<span class="badge-origem"><i class="bi bi-bank"></i> ${item.origem || "Importado"}</span>`
+          : "";
+
         return `
-        <div class="transaction-item">
+        <div class="transaction-item" data-date="${item.date}" data-amount="${item.amount}">
+          <div class="ti-icon-wrap income"><i class="bi bi-arrow-down-left"></i></div>
           <div class="transaction-info">
-            <div class="transaction-title">
-              ${safeDescription}
-              <span class="category-badge category-${safeCategoryClass}">
-                ${safeCategoryName}
-              </span>
+            <div class="transaction-title">${safeDescription}${origemBadge}</div>
+            <div class="transaction-details">
+              <span class="category-badge category-${safeCategoryClass}">${safeCategoryName}</span>
+              <span class="ti-date">${formatDate(item.date)}</span>
             </div>
-            <div class="transaction-details">${formatDate(item.date)}</div>
           </div>
           <div class="transaction-actions">
             <div class="transaction-amount income">+${formatCurrency(item.amount)}</div>
-            <button class="btn btn-edit" data-edit data-id="${item.id}" data-type="income" title="Editar">
-              <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-delete" data-delete data-id="${item.id}" data-type="income">
-              <i class="bi bi-trash"></i>
-            </button>
+            <div class="ti-btns">
+              <button class="ti-act-btn" data-edit data-id="${item.id}" data-type="income" title="Editar"><i class="bi bi-pencil"></i></button>
+              <button class="ti-act-btn ti-act-del" data-delete data-id="${item.id}" data-type="income" title="Excluir"><i class="bi bi-trash3"></i></button>
+            </div>
           </div>
         </div>
       `;
@@ -698,32 +860,40 @@ function renderTransactions() {
         const safeCategoryClass = escapeHtml(item.category);
         const safeCategoryName = escapeHtml(getCategoryName(item.category, "expense"));
 
+        const origemBadgeExp = item.importado
+          ? `<span class="badge-origem"><i class="bi bi-bank"></i> ${item.origem || "Importado"}</span>`
+          : "";
+
         return `
-        <div class="transaction-item">
+        <div class="transaction-item" data-date="${item.date}" data-amount="${item.amount}">
+          <div class="ti-icon-wrap expense"><i class="bi bi-arrow-up-right"></i></div>
           <div class="transaction-info">
-            <div class="transaction-title">
-              ${safeDescription}
-              <span class="category-badge category-${safeCategoryClass}">
-                ${safeCategoryName}
-              </span>
+            <div class="transaction-title">${safeDescription}${origemBadgeExp}</div>
+            <div class="transaction-details">
+              <span class="category-badge category-${safeCategoryClass}">${safeCategoryName}</span>
+              <span class="ti-date">${formatDate(item.date)}</span>
             </div>
-            <div class="transaction-details">${formatDate(item.date)}</div>
           </div>
           <div class="transaction-actions">
-            <input type="checkbox" ${item.paid ? "checked" : ""} data-toggle-paid data-id="${item.id}" />
             <div class="transaction-amount expense">-${formatCurrency(item.amount)}</div>
-            <button class="btn btn-edit" data-edit data-id="${item.id}" data-type="expense" title="Editar">
-              <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-delete" data-delete data-id="${item.id}" data-type="expense">
-              <i class="bi bi-trash"></i>
-            </button>
+            <div class="ti-btns">
+              <input type="checkbox" ${item.paid ? "checked" : ""} data-toggle-paid data-id="${item.id}" title="Marcar como paga" />
+              <button class="ti-act-btn" data-edit data-id="${item.id}" data-type="expense" title="Editar"><i class="bi bi-pencil"></i></button>
+              <button class="ti-act-btn ti-act-del" data-delete data-id="${item.id}" data-type="expense" title="Excluir"><i class="bi bi-trash3"></i></button>
+            </div>
           </div>
         </div>
       `;
       })
       .join("");
   }
+
+  // Atualiza widgets do Resumo após renderizar
+  if (window.syncResumoWidgets) setTimeout(window.syncResumoWidgets, 20);
+
+  // Expõe dados filtrados para outros módulos (ex: Transações)
+  window._txData = { incomes: filteredIncomes, expenses: filteredExpenses };
+  if (window.renderTransacoes) setTimeout(window.renderTransacoes, 0);
 }
 
 // Event delegation para ações nas listas
@@ -784,9 +954,18 @@ function openEditModal(id, type) {
   editingType = type;
 
   document.getElementById("editModalTitle").textContent = type === "income" ? "Editar Receita" : "Editar Despesa";
-  document.getElementById("editModalIcon").innerHTML = type === "income"
-    ? '<i class="bi bi-wallet2"></i>'
-    : '<i class="bi bi-receipt"></i>';
+  const isIncome = type === "income";
+  const hdrIcon = document.getElementById("editModalIcon");
+  const hdrEl   = document.getElementById("editModalHeader");
+  hdrIcon.innerHTML = isIncome ? '<i class="bi bi-wallet2"></i>' : '<i class="bi bi-receipt"></i>';
+  hdrIcon.style.cssText = isIncome
+    ? 'background:rgba(16,185,129,0.15);color:#10b981;border-color:rgba(16,185,129,0.25)'
+    : 'background:rgba(239,68,68,0.15);color:#ef4444;border-color:rgba(239,68,68,0.25)';
+  if (hdrEl) hdrEl.style.setProperty('--nf-glow', isIncome ? 'rgba(16,185,129,0.13)' : 'rgba(239,68,68,0.13)');
+  const saveBtn = document.getElementById('editConfirmBtn');
+  if (saveBtn) saveBtn.style.cssText = isIncome
+    ? 'background:#10b981;color:#fff;width:100%'
+    : 'background:#ef4444;color:#fff;width:100%';
 
   const cats = type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
   editCategory.innerHTML = cats.map((c) =>
@@ -797,17 +976,36 @@ function openEditModal(id, type) {
   editAmountInput.value = formatCurrency(item.amount);
   editDate.value = item.date;
 
+  const isRec = !!item.recorrente;
+  const colorClass = isIncome ? 'pt-green' : 'pt-red';
+  [document.getElementById('editTipoUnica'), document.getElementById('editTipoRecorrente')].forEach(b => {
+    b.classList.remove('pt-green', 'pt-red');
+    b.classList.add(colorClass);
+  });
+  document.getElementById('editTipoUnica').classList.toggle('pt-active', !isRec);
+  document.getElementById('editTipoRecorrente').classList.toggle('pt-active', isRec);
+
   editModal.classList.remove("hidden");
 }
 
 document.getElementById("closeEditBtn").addEventListener("click", () => editModal.classList.add("hidden"));
 editModal.addEventListener("click", (e) => { if (e.target === editModal) editModal.classList.add("hidden"); });
 
+document.getElementById('editTipoUnica').addEventListener('click', () => {
+  document.getElementById('editTipoUnica').classList.add('pt-active');
+  document.getElementById('editTipoRecorrente').classList.remove('pt-active');
+});
+document.getElementById('editTipoRecorrente').addEventListener('click', () => {
+  document.getElementById('editTipoRecorrente').classList.add('pt-active');
+  document.getElementById('editTipoUnica').classList.remove('pt-active');
+});
+
 document.getElementById("editConfirmBtn").addEventListener("click", async () => {
   const description = editDescription.value.trim();
   const amount = parseBRL(editAmountInput.value);
   const category = editCategory.value;
   const date = editDate.value;
+  const recorrente = document.getElementById('editTipoRecorrente').classList.contains('pt-active');
 
   if (!description || amount <= 0 || !date) {
     showToast("Preencha todos os campos corretamente.", "error");
@@ -816,12 +1014,16 @@ document.getElementById("editConfirmBtn").addEventListener("click", async () => 
 
   const collectionName = editingType === "income" ? "incomes" : "expenses";
   const ref = doc(db, "users", currentUserId, collectionName, editingId);
-  await updateDoc(ref, { description, amount, category, date });
+  await updateDoc(ref, { description, amount, category, date, recorrente });
 
   editModal.classList.add("hidden");
   showToast("Transação atualizada!", "success");
   await loadData();
 });
+
+// Expõe funções para uso direto pelos modais inline
+window.openEditModal = openEditModal;
+window.deleteTransaction = deleteTransaction;
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -1181,7 +1383,8 @@ const ofxMobileBtn = document.getElementById("ofxMobileBtn");
 const ofxResumoModal = document.getElementById("ofxResumoModal");
 const ofxResumoContent = document.getElementById("ofxResumoContent");
 
-// Abre o seletor de arquivo ao clicar no botão (header ou mobile)
+let ofxTransacoesCache = null;
+
 function triggerOFXImport() {
   mobileMenu.classList.remove("open");
   ofxFileInput.click();
@@ -1190,14 +1393,25 @@ function triggerOFXImport() {
 if (ofxImportBtn) ofxImportBtn.addEventListener("click", triggerOFXImport);
 if (ofxMobileBtn) ofxMobileBtn.addEventListener("click", triggerOFXImport);
 
+const ofxLimparBtn = document.getElementById("ofxLimparBtn");
+if (ofxLimparBtn) ofxLimparBtn.addEventListener("click", async () => {
+  if (!confirm("Isso vai apagar TODOS os dados (manuais e OFX). Confirma?")) return;
+  mostrarProgressoOFX("Limpando base de dados...");
+  ofxResumoModal.classList.remove("hidden");
+  await deletarTodosManuais();
+  await loadData();
+  ofxResumoModal.classList.add("hidden");
+  showToast("Base de dados limpa! Agora importe os arquivos OFX.", "success");
+});
+
 document.getElementById("closeOfxResumoBtn")?.addEventListener("click", () => {
   ofxResumoModal.classList.add("hidden");
+  ofxTransacoesCache = null;
 });
 
 ofxFileInput.addEventListener("change", async (e) => {
   const arquivo = e.target.files[0];
   if (!arquivo) return;
-  // Reseta o input para permitir reimportar o mesmo arquivo
   e.target.value = "";
 
   mostrarProgressoOFX("Lendo arquivo...");
@@ -1205,21 +1419,255 @@ ofxFileInput.addEventListener("change", async (e) => {
   try {
     const texto = await lerOFX(arquivo);
     mostrarProgressoOFX("Interpretando movimentações...");
-
     const transacoes = extrairTransacoes(texto);
-    mostrarProgressoOFX(`${transacoes.length} movimentações encontradas. Salvando...`);
 
-    const resumo = await importarTransacoes(currentUserId, transacoes, db);
-    mostrarProgressoOFX("Atualizando dashboard...");
+    // Detecta período do arquivo
+    const datas = transacoes.map((t) => t.data).sort();
+    const dataInicio = formatDate(datas[0]);
+    const dataFim = formatDate(datas[datas.length - 1]);
 
-    await loadData();
-    mostrarResumo(resumo);
+    ofxTransacoesCache = transacoes;
+    mostrarConfirmacaoOFX(transacoes.length, dataInicio, dataFim, datas[0], datas[datas.length - 1]);
   } catch (err) {
     ofxResumoModal.classList.add("hidden");
     showToast(err.message || "Erro ao importar OFX. Verifique o arquivo.", "error");
     console.error("Erro OFX:", err);
   }
 });
+
+function mostrarConfirmacaoOFX(total, dataInicio, dataFim, dataInicioRaw, dataFimRaw) {
+  ofxResumoContent.innerHTML = `
+    <div class="ofx-resumo-header">
+      <i class="bi bi-file-earmark-arrow-down" style="font-size:1.6em;color:#818cf8"></i>
+      <h3>Confirmar importação</h3>
+    </div>
+    <div class="ofx-periodo-info">
+      <div class="ofx-periodo-total">
+        <i class="bi bi-file-earmark-text"></i>
+        <strong>${total}</strong> movimentações encontradas
+      </div>
+      <div class="ofx-periodo-datas">
+        <i class="bi bi-calendar3" style="color:#818cf8"></i>
+        <strong>${dataInicio}</strong>
+        <span>→</span>
+        <strong>${dataFim}</strong>
+      </div>
+    </div>
+    <div class="ofx-opcoes">
+      <button class="ofx-opcao-btn ofx-opcao-mesclar" id="ofxBtnMesclar">
+        <i class="bi bi-plus-circle"></i>
+        <div>
+          <strong>Importar movimentações</strong>
+          <span>Adiciona ao histórico sem apagar nada</span>
+        </div>
+      </button>
+    </div>
+    <button class="btn ofx-cancelar-btn" id="ofxBtnCancelar">Cancelar</button>
+  `;
+  ofxResumoModal.classList.remove("hidden");
+
+  document.getElementById("ofxBtnCancelar").addEventListener("click", () => {
+    ofxResumoModal.classList.add("hidden");
+    ofxTransacoesCache = null;
+  });
+
+  document.getElementById("ofxBtnMesclar").addEventListener("click", () =>
+    executarImportacaoOFX("mesclar", dataInicioRaw, dataFimRaw)
+  );
+}
+
+async function executarImportacaoOFX(modo, dataInicio, dataFim) {
+  const transacoes = ofxTransacoesCache;
+  ofxTransacoesCache = null;
+
+  try {
+    if (modo === "limpar") {
+      mostrarProgressoOFX("Apagando todos os lançamentos manuais...");
+      await deletarTodosManuais();
+    } else if (modo === "substituir") {
+      mostrarProgressoOFX("Removendo lançamentos manuais do período...");
+      await deletarManuaisNoPeriodo(dataInicio, dataFim);
+    }
+
+    mostrarProgressoOFX(`Salvando ${transacoes.length} movimentações...`);
+    const resumo = await importarTransacoes(currentUserId, transacoes, db);
+    mostrarProgressoOFX("Atualizando dashboard...");
+    await loadData();
+    mostrarResumo(resumo);
+  } catch (err) {
+    ofxResumoModal.classList.add("hidden");
+    showToast(err.message || "Erro ao importar. Tente novamente.", "error");
+    console.error("Erro OFX:", err);
+  }
+}
+
+async function deletarManuaisNoPeriodo(dataInicio, dataFim) {
+  const colecoes = ["incomes", "expenses"];
+  for (const col of colecoes) {
+    const ref = collection(db, "users", currentUserId, col);
+    const snap = await getDocs(ref);
+    const deletes = [];
+    snap.forEach((docSnap) => {
+      const d = docSnap.data();
+      if (d.date >= dataInicio && d.date <= dataFim) {
+        deletes.push(deleteDoc(doc(db, "users", currentUserId, col, docSnap.id)));
+      }
+    });
+    await Promise.all(deletes);
+  }
+}
+
+async function deletarTodosManuais() {
+  // Apaga incomes, expenses E transacoes para começar do zero
+  const colecoes = ["incomes", "expenses", "transacoes"];
+  for (const col of colecoes) {
+    const ref = collection(db, "users", currentUserId, col);
+    const snap = await getDocs(ref);
+    await Promise.all(snap.docs.map((d) => deleteDoc(doc(db, "users", currentUserId, col, d.id))));
+  }
+}
+
+// =====================================================
+// DIAGNÓSTICO DO BANCO DE DADOS
+// =====================================================
+
+const diagnosticoModal = document.getElementById("diagnosticoModal");
+const diagnosticoContent = document.getElementById("diagnosticoContent");
+
+document.getElementById("diagnosticoBtn")?.addEventListener("click", () => {
+  diagnosticoModal.classList.remove("hidden");
+  executarDiagnostico();
+});
+
+document.getElementById("closeDiagnosticoBtn")?.addEventListener("click", () => {
+  diagnosticoModal.classList.add("hidden");
+});
+
+diagnosticoModal?.addEventListener("click", (e) => {
+  if (e.target === diagnosticoModal) diagnosticoModal.classList.add("hidden");
+});
+
+async function executarDiagnostico() {
+  diagnosticoContent.innerHTML = `
+    <div class="ofx-progresso">
+      <div class="ofx-spinner"></div>
+      <p>Contando documentos no Firestore...</p>
+    </div>
+  `;
+
+  try {
+    const uid = currentUserId;
+    const fmt = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+    const [snapIncomes, snapExpenses, snapTransacoes, snapCofre] = await Promise.all([
+      getDocs(collection(db, "users", uid, "incomes")),
+      getDocs(collection(db, "users", uid, "expenses")),
+      getDocs(collection(db, "users", uid, "transacoes")),
+      getDocs(collection(db, "users", uid, "cofreTransactions")),
+    ]);
+
+    const somaCampo = (snap, campo) => snap.docs.reduce((s, d) => s + (d.data()[campo] || 0), 0);
+
+    const totalIncomes = somaCampo(snapIncomes, "amount");
+    const totalExpenses = somaCampo(snapExpenses, "amount");
+
+    const transacoesReceitas = snapTransacoes.docs.filter((d) => d.data().tipo === "receita");
+    const transacoesDespesas = snapTransacoes.docs.filter((d) => d.data().tipo === "despesa");
+    const totalTrReceitas = transacoesReceitas.reduce((s, d) => s + (d.data().valor || 0), 0);
+    const totalTrDespesas = transacoesDespesas.reduce((s, d) => s + (d.data().valor || 0), 0);
+
+    const totalCofre = snapCofre.docs.reduce((s, d) => {
+      const t = d.data();
+      return t.type === "deposit" ? s + t.amount : s - t.amount;
+    }, 0);
+
+    const totalGeralReceitas = totalIncomes + totalTrReceitas;
+    const totalGeralDespesas = totalExpenses + totalTrDespesas;
+    const saldoCalculado = saldoInicial + totalGeralReceitas - totalGeralDespesas - totalCofre;
+
+    const temDuplicata = snapIncomes.size > 0 && snapTransacoes.size > 0;
+
+    diagnosticoContent.innerHTML = `
+      <div class="diag-title">
+        <i class="bi bi-database-check"></i>
+        Diagnóstico do banco de dados
+      </div>
+
+      <div class="diag-colecao">
+        <div class="diag-colecao-header">
+          <span class="diag-colecao-nome"><i class="bi bi-arrow-up-circle" style="color:#4ade80"></i> incomes (manuais)</span>
+          <span class="diag-docs-count">${snapIncomes.size} docs</span>
+        </div>
+        <div class="diag-valores">
+          <div class="diag-valor receita">Total: <strong>${fmt(totalIncomes)}</strong></div>
+        </div>
+      </div>
+
+      <div class="diag-colecao">
+        <div class="diag-colecao-header">
+          <span class="diag-colecao-nome"><i class="bi bi-arrow-down-circle" style="color:#f87171"></i> expenses (manuais)</span>
+          <span class="diag-docs-count">${snapExpenses.size} docs</span>
+        </div>
+        <div class="diag-valores">
+          <div class="diag-valor despesa">Total: <strong>${fmt(totalExpenses)}</strong></div>
+        </div>
+      </div>
+
+      <div class="diag-colecao">
+        <div class="diag-colecao-header">
+          <span class="diag-colecao-nome"><i class="bi bi-bank" style="color:#818cf8"></i> transacoes (OFX importado)</span>
+          <span class="diag-docs-count">${snapTransacoes.size} docs</span>
+        </div>
+        <div class="diag-valores">
+          <div class="diag-valor receita">Receitas: <strong>${fmt(totalTrReceitas)}</strong></div>
+          <div class="diag-valor despesa">Despesas: <strong>${fmt(totalTrDespesas)}</strong></div>
+        </div>
+      </div>
+
+      <div class="diag-colecao">
+        <div class="diag-colecao-header">
+          <span class="diag-colecao-nome"><i class="bi bi-safe2" style="color:#f59e0b"></i> cofre</span>
+          <span class="diag-docs-count">${snapCofre.size} docs</span>
+        </div>
+        <div class="diag-valores">
+          <div class="diag-valor neutro">Saldo cofre: <strong>${fmt(totalCofre)}</strong></div>
+        </div>
+      </div>
+
+      <div class="diag-colecao" style="border-color:rgba(255,255,255,0.15)">
+        <div class="diag-colecao-header">
+          <span class="diag-colecao-nome"><i class="bi bi-calculator" style="color:#f59e0b"></i> Cálculo do saldo</span>
+        </div>
+        <div class="diag-valores" style="flex-direction:column;gap:4px">
+          <div class="diag-valor">Saldo base: <strong style="color:#f59e0b">${fmt(saldoInicial)}</strong></div>
+          <div class="diag-valor receita">+ Todas receitas: <strong>${fmt(totalGeralReceitas)}</strong></div>
+          <div class="diag-valor despesa">− Todas despesas: <strong>${fmt(totalGeralDespesas)}</strong></div>
+          <div class="diag-valor">− Cofre: <strong style="color:#f59e0b">${fmt(totalCofre)}</strong></div>
+          <div class="diag-valor" style="border-top:1px solid rgba(255,255,255,0.1);padding-top:6px;margin-top:4px">
+            = Saldo final: <strong style="color:#fff;font-size:1.1em">${fmt(saldoCalculado)}</strong>
+          </div>
+        </div>
+      </div>
+
+      ${temDuplicata ? `
+      <div class="diag-alerta">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <strong>Atenção:</strong> Você tem lançamentos em <em>incomes/expenses</em> (${snapIncomes.size + snapExpenses.size} docs)
+        E também em <em>transacoes</em> (${snapTransacoes.size} docs). Se forem os mesmos períodos, os valores
+        estão sendo contados duas vezes. Use <strong>"Limpar base"</strong> e reimporte apenas os OFX.
+      </div>
+      ` : `
+      <div class="diag-ok">
+        <i class="bi bi-check-circle-fill"></i>
+        Não foram encontradas duplicatas entre lançamentos manuais e OFX.
+      </div>
+      `}
+    `;
+  } catch (err) {
+    diagnosticoContent.innerHTML = `<p style="color:#f87171">Erro ao carregar diagnóstico: ${err.message}</p>`;
+    console.error(err);
+  }
+}
 
 function mostrarProgressoOFX(mensagem) {
   ofxResumoContent.innerHTML = `

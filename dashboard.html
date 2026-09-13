@@ -4,56 +4,995 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finanças Pessoais - Controle Completo </title>
+    <title>minhas finanças</title>
+    <link rel="icon" type="image/png" href="assets/logo_financas (1).png">
     <!-- CSS -->
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=4">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+      @media (max-width: 900px) {
+        #mobileMenu, #mobileMenu.open { display: none !important; }
+        .resumo-hide-mobile { display: none !important; }
+        .resumo-layout  { display: block !important; width: 100% !important; max-width: 100% !important; }
+        .resumo-main    { display: flex !important; flex-direction: column !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; padding: 12px !important; }
+        .resumo-top-row { display: block !important; width: 100% !important; }
+        .resumo-top-row > * { width: 100% !important; box-sizing: border-box !important; }
+        .resumo-right   { display: none !important; }
+        .ranking-card   { display: none !important; }
+        .topbar-add-btn { display: none !important; }
+      }
+    </style>
 </head>
 
-<body>
-    <header class="app-header">
-        <div class="header-left">
-            <h1 id="logo">
-                <i class="bi bi-cash-coin"></i> Finanças Pessoais
-            </h1>
-            <p id="userEmail">Carregando usuário...</p>
+<body class="dashboard-page">
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <img src="assets/logo_financas (1).png" alt="Logo" class="sidebar-logo-img">
+            <span class="sidebar-brand-name" id="logo"><span>minhas</span><span class="accent">finanças</span></span>
         </div>
 
-        <div class="header-right">
-            <button id="openChartBtnHeader" class="btn-secondary chart-btn-header" title="Resumo anual">
-                <i class="bi bi-graph-up"></i> Resumo
-            </button>
-            <button id="cofreHeaderBtn" class="btn-secondary btn-cofre-header" title="Meu Cofre">
-                <i class="bi bi-safe2"></i> Cofre
-            </button>
-            <button id="ofxImportBtn" class="btn-secondary btn-ofx-header" title="Importar Extrato OFX">
-                <i class="bi bi-file-earmark-arrow-down"></i> Importar OFX
-            </button>
-            <button id="shortcutIosSetupBtn" class="btn-secondary" title="Configurar Atalho iPhone">
-                <i class="bi bi-phone"></i> iPhone
-            </button>
-            <button id="shortcutAndroidSetupBtn" class="btn-secondary" title="Configurar Atalho Android">
-                <i class="bi bi-android2"></i> Android
-            </button>
-            <button id="logoutBtn" class="btn-secondary">
-                <i class="bi bi-box-arrow-right"></i> Sair
-            </button>
+        <div class="sidebar-scroll">
+
+            <!-- Nav principal -->
+            <nav class="sidebar-nav">
+                <a class="sidebar-item active" href="#" data-view="resumo">
+                    <i class="bi bi-grid-1x2-fill"></i> Resumo
+                </a>
+                <a class="sidebar-item" href="#" data-view="transacoes">
+                    <i class="bi bi-arrow-left-right"></i> Transações
+                </a>
+
+            </nav>
+
+            <div class="sidebar-divider-label">PLANEJAR</div>
+            <nav class="sidebar-nav">
+                <a class="sidebar-item" href="#" data-view="objetivos">
+                    <i class="bi bi-bullseye"></i> Objetivos
+                </a>
+            </nav>
+
+            <div class="sidebar-divider-label">ANALISAR</div>
+            <nav class="sidebar-nav">
+                <a class="sidebar-item" id="openChartBtnHeader" href="#" data-view="relatorios">
+                    <i class="bi bi-file-bar-graph"></i> Relatórios
+                </a>
+                <a class="sidebar-item" href="#" data-view="graficos">
+                    <i class="bi bi-bar-chart-line"></i> Gráficos
+                </a>
+                <a class="sidebar-item" href="#" data-view="categorias">
+                    <i class="bi bi-tag"></i> Categorias
+                </a>
+
+                <a class="sidebar-item" href="#" data-view="calendario">
+                    <i class="bi bi-calendar3"></i> Calendário
+                </a>
+            </nav>
+
+            <!-- botões de ferramentas mantidos ocultos: usados pelo app.js -->
+            <span style="display:none" id="cofreHeaderBtn"></span>
+            <span style="display:none" id="ofxImportBtn"></span>
+            <span style="display:none" id="shortcutIosSetupBtn"></span>
+            <span style="display:none" id="shortcutAndroidSetupBtn"></span>
+            <span style="display:none" id="ofxLimparBtn"></span>
+            <span style="display:none" id="diagnosticoBtn"></span>
+
         </div>
 
-        <!-- Hambúrguer (só mobile) -->
-        <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
-            <i class="bi bi-list"></i>
-        </button>
-    </header>
+        <div class="sidebar-footer">
+            <button class="theme-toggle-btn" id="themeToggleBtn">
+                <i class="bi bi-sun" id="themeIcon"></i>
+                <span id="themeLabel">Modo claro</span>
+            </button>
+            <!-- mantidos ocultos: usados pelo avatar e pelo painel de perfil -->
+            <p style="display:none" id="userEmail">Carregando...</p>
+            <button style="display:none" id="logoutBtn"></button>
+        </div>
+    </aside>
+
+    <!-- Overlay do sidebar mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ===== CONTEÚDO PRINCIPAL ===== -->
+    <div class="dash-main">
+
+        <!-- Top bar -->
+        <div class="dash-topbar">
+            <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+                <i class="bi bi-list"></i>
+            </button>
+
+            <div class="month-nav">
+                <button class="month-nav-btn" id="prevMonthBtn" title="Mês anterior">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <select id="filterMonth" class="month-select">
+                    <option value="0">Janeiro</option>
+                    <option value="1">Fevereiro</option>
+                    <option value="2">Março</option>
+                    <option value="3">Abril</option>
+                    <option value="4">Maio</option>
+                    <option value="5">Junho</option>
+                    <option value="6">Julho</option>
+                    <option value="7">Agosto</option>
+                    <option value="8">Setembro</option>
+                    <option value="9">Outubro</option>
+                    <option value="10">Novembro</option>
+                    <option value="11">Dezembro</option>
+                </select>
+                <select id="filterYear" class="year-select"></select>
+                <button class="month-nav-btn" id="nextMonthBtn" title="Próximo mês">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+
+            <div class="dash-topbar-right">
+                <div class="add-btn-wrapper">
+                    <button class="topbar-add-btn" id="addBtn" title="Adicionar transação">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                    <!-- Dropdown ancorado ao botão -->
+                    <div class="add-dropdown" id="addDropdown">
+                        <button class="add-dd-item" data-modal="novaDespesa">
+                            <span class="add-dd-icon" style="background:rgba(239,68,68,0.15);color:#ef4444"><i class="bi bi-dash-circle-fill"></i></span>
+                            Despesa
+                        </button>
+
+                        <button class="add-dd-item" data-modal="novaReceita">
+                            <span class="add-dd-icon" style="background:rgba(16,185,129,0.15);color:#10b981"><i class="bi bi-plus-circle-fill"></i></span>
+                            Receita
+                        </button>
+                        <button class="add-dd-item" data-modal="novaTransferencia">
+                            <span class="add-dd-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b"><i class="bi bi-arrow-down-up"></i></span>
+                            Transferência
+                        </button>
+                    </div>
+                </div>
+                <div class="profile-btn-wrapper">
+                    <div class="user-avatar-circle" id="userAvatarCircle" title="Meu perfil">
+                        <span id="userAvatarInitial"><i class="bi bi-person-fill"></i></span>
+                    </div>
+                    <!-- Painel de perfil -->
+                    <div class="profile-panel" id="profilePanel">
+                        <div class="pp-header">
+                            <span class="pp-title">Meu perfil</span>
+                            <button class="pp-close" id="profilePanelClose"><i class="bi bi-x"></i></button>
+                        </div>
+                        <div class="pp-avatar-wrap">
+                            <div class="pp-avatar" id="ppAvatar"></div>
+                        </div>
+                        <div class="pp-name" id="ppName"></div>
+                        <div class="pp-email" id="ppEmail"></div>
+                        <div class="pp-divider"></div>
+                        <button class="pp-item" id="ppLogoutBtn">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span>Sair da conta</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conteúdo -->
+        <div class="dash-content" id="view-resumo">
+        <div class="resumo-layout">
+
+          <!-- ===== MAIN (scrollable) ===== -->
+          <div class="resumo-main">
+
+            <!-- Top row: timeline + ranking -->
+            <div class="resumo-top-row">
+
+              <!-- Balance timeline -->
+              <div class="resumo-card balance-tl-card" id="cardSaldo" title="Clique para ajustar saldo" style="cursor:pointer">
+                <div class="btl-row">
+                  <div class="btl-icon-wrap btl-check"><i class="bi bi-check2-circle"></i></div>
+                  <div class="btl-text">
+                    <div class="btl-value" id="btlInicial">R$ 0,00</div>
+                    <div class="btl-lbl">Inicial</div>
+                  </div>
+                </div>
+                <div class="btl-connector"></div>
+                <div class="btl-row">
+                  <div class="btl-icon-wrap btl-current"><i class="bi bi-circle-fill" style="font-size:10px"></i></div>
+                  <div class="btl-text">
+                    <div class="btl-value btl-main" id="currentBalance">R$ 0,00</div>
+                    <div class="btl-lbl">Saldo atual</div>
+                  </div>
+                </div>
+                <div class="btl-connector btl-dashed"></div>
+                <div class="btl-row">
+                  <div class="btl-icon-wrap btl-forecast"><i class="bi bi-clock"></i></div>
+                  <div class="btl-text">
+                    <div class="btl-value" id="btlPrevisto">R$ 0,00</div>
+                    <div class="btl-lbl">Previsto</div>
+                  </div>
+                </div>
+                <div style="display:none"><span id="saldoInicialLabel"></span></div>
+              </div>
+
+              <!-- Ranking categorias -->
+              <div class="resumo-card ranking-card">
+                <div class="resumo-card-hdr">
+                  <span class="resumo-card-title">Top categorias</span>
+                  <span class="resumo-card-sub" id="rankingPeriodo">— despesas do período</span>
+                </div>
+                <div id="rankingBars" class="ranking-bars-list">
+                  <div class="ranking-empty" id="rankingEmpty">Nenhuma despesa no período</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Visão geral -->
+            <div class="resumo-section-hdr">
+              <span>Visão geral</span>
+            </div>
+
+            <div class="vg-grid">
+              <div class="vg-card">
+                <div class="vg-icon-wrap" style="background:rgba(59,130,246,0.18);color:#3b82f6"><i class="bi bi-building-check"></i></div>
+                <div class="vg-info">
+                  <div class="vg-value" id="vgSaldo">R$ 0,00</div>
+                  <div class="vg-lbl">Saldo nas contas</div>
+                </div>
+              </div>
+              <div class="vg-card">
+                <div class="vg-icon-wrap" style="background:rgba(16,185,129,0.18);color:#10b981"><i class="bi bi-plus-circle"></i></div>
+                <div class="vg-info">
+                  <div class="vg-value" id="totalIncome">R$ 0,00</div>
+                  <div class="vg-lbl">Total recebido</div>
+                </div>
+              </div>
+              <div class="vg-card">
+                <div class="vg-icon-wrap" style="background:rgba(239,68,68,0.18);color:#ef4444"><i class="bi bi-dash-circle"></i></div>
+                <div class="vg-info">
+                  <div class="vg-value" id="totalExpense">R$ 0,00</div>
+                  <div class="vg-lbl">Total gasto</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="vg-card vg-transfer">
+              <div class="vg-icon-wrap" style="background:rgba(245,158,11,0.18);color:#f59e0b"><i class="bi bi-arrow-down-up"></i></div>
+              <div class="vg-info">
+                <div class="vg-value" id="totalProfit" title="Clique 5x rápido!">R$ 0,00</div>
+                <div class="vg-lbl">Resultado do período</div>
+              </div>
+            </div>
+
+            <!-- Comparação mensal -->
+            <div class="resumo-section-hdr">
+              <span>Comparação mensal</span>
+            </div>
+            <div class="resumo-card retro-card">
+              <div class="retro-chart-hdr">
+                <div>
+                  <div class="retro-chart-title">Receitas vs Despesas</div>
+                  <div class="retro-chart-hint"><i class="bi bi-hand-index"></i> Clique em um mês para comparar</div>
+                </div>
+                <div class="retro-legend">
+                  <span class="retro-leg-item"><span class="retro-leg-dot" style="background:#10b981"></span>Receitas</span>
+                  <span class="retro-leg-item"><span class="retro-leg-dot" style="background:#ef4444"></span>Despesas</span>
+                </div>
+              </div>
+              <div class="retro-chart-wrap">
+                <canvas id="retroChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Últimas despesas -->
+            <div class="resumo-section-hdr">
+              <span>Últimas despesas</span>
+            </div>
+            <div class="resumo-card" style="padding:0;overflow:hidden">
+              <div class="ultimas-hdr">
+                <span>Descrição</span><span>Conta</span><span>Lançamento</span><span>Valor</span><span>Ações</span>
+              </div>
+              <div class="transaction-list" id="expenseList">
+                <div class="empty-state"><div class="empty-state-icon"><i class="bi bi-inbox"></i></div><p>Nenhuma despesa registrada ainda</p></div>
+              </div>
+            </div>
+
+            <!-- Formulários ocultos (necessários para o JS) -->
+            <div style="display:none">
+              <form id="incomeForm">
+                <input type="text" id="incomeDescription"><input type="text" id="incomeAmount">
+                <select id="incomeCategory"><option value="salario">Salário</option><option value="freelance">Freelance</option><option value="investimentos">Investimentos</option><option value="outros">Outros</option></select>
+                <input type="date" id="incomeDate"><button type="submit"></button>
+              </form>
+              <form id="expenseForm">
+                <input type="text" id="expenseDescription"><input type="text" id="expenseAmount">
+                <select id="expenseCategory"><option value="alimentacao">Alimentação</option><option value="transporte">Transporte</option><option value="moradia">Moradia</option><option value="lazer">Lazer</option><option value="saude">Saúde</option><option value="educacao">Educação</option><option value="outros">Outros</option></select>
+                <input type="date" id="expenseDate">
+                <input type="hidden" id="expenseCartaoId" value="">
+                <button type="submit"></button>
+              </form>
+              <div class="transaction-list" id="incomeList"></div>
+            </div>
+
+          </div><!-- /.resumo-main -->
+
+          <!-- ===== PAINEL DIREITO ===== -->
+          <div class="resumo-right">
+
+            <!-- Saúde financeira -->
+            <div class="right-widget">
+              <div class="rw-title">Saúde financeira</div>
+              <div class="radar-wrap">
+                <canvas id="chartRadar"></canvas>
+              </div>
+              <div class="radar-labels">
+                <span class="rl-item"><span class="rl-dot" style="background:#3b82f6"></span>Economia</span>
+                <span class="rl-item"><span class="rl-dot" style="background:#10b981"></span>Crédito</span>
+                <span class="rl-item"><span class="rl-dot" style="background:#8b5cf6"></span>Planejamento</span>
+                <span class="rl-item"><span class="rl-dot" style="background:#f59e0b"></span>Comprometimento</span>
+                <span class="rl-item"><span class="rl-dot" style="background:#ef4444"></span>Reserva</span>
+              </div>
+            </div>
+
+
+            <!-- Despesas widget -->
+            <div class="right-widget">
+              <div class="rw-tabs"><span class="rw-tab-active">Despesas</span></div>
+              <div class="rw-body">
+                <div class="rw-icon-circle"><i class="bi bi-building-check"></i></div>
+                <p class="rw-text">Você tem <strong id="rw-count" style="color:#ef4444">0 despesas</strong> no mês, no total de</p>
+                <div class="rw-big-value" id="rw-total">R$ 0,00</div>
+                <button class="rw-link-btn"><i class="bi bi-list-check"></i> Ver despesas pendentes</button>
+              </div>
+            </div>
+
+            <!-- Donut -->
+            <div class="right-widget">
+              <div class="rw-title">Despesas por recorrência</div>
+              <div class="donut-outer">
+                <div class="css-donut" id="cssDonut"></div>
+                <div class="donut-center-info">
+                  <div class="donut-center-val" id="donutVal">R$ 0,00</div>
+                  <div class="donut-center-lbl">Total</div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /.resumo-right -->
+
+        </div><!-- /.resumo-layout -->
+        </div><!-- /#view-resumo -->
+
+
+        <!-- ===== VIEW: TRANSAÇÕES ===== -->
+        <div id="view-transacoes" class="dash-view hidden">
+          <div class="tx-header">
+            <h2 class="view-title">Transações</h2>
+            <div class="tx-search-wrap">
+              <i class="bi bi-search tx-search-icon"></i>
+              <input type="text" id="txSearchInput" class="tx-search-input" placeholder="Pesquisar transações...">
+              <button class="tx-search-clear hidden" id="txSearchClear"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="tx-tabs">
+              <button class="tx-tab tx-tab-active" data-tx-tab="despesas"><i class="bi bi-dash-circle"></i> Despesas</button>
+              <button class="tx-tab" data-tx-tab="receitas"><i class="bi bi-plus-circle"></i> Receitas</button>
+              <button class="tx-tab" data-tx-tab="transferencias"><i class="bi bi-arrow-down-up"></i> Transferências</button>
+              <button class="tx-tab" data-tx-tab="extrato"><i class="bi bi-list-ul"></i> Extrato</button>
+            </div>
+          </div>
+          <!-- Tab bar mobile (sticky bottom) -->
+          <div class="tx-mob-tabbar">
+            <button class="tx-tab tx-tab-active" data-tx-tab="despesas"><i class="bi bi-dash-circle"></i>Despesas</button>
+            <button class="tx-tab" data-tx-tab="receitas"><i class="bi bi-plus-circle"></i>Receitas</button>
+            <button class="tx-tab" data-tx-tab="transferencias"><i class="bi bi-arrow-down-up"></i>Transferênc.</button>
+            <button class="tx-tab" data-tx-tab="extrato"><i class="bi bi-list-ul"></i>Extrato</button>
+          </div>
+
+          <!-- Despesas -->
+          <div class="tx-panel" id="tx-panel-despesas">
+            <div class="tx-table-wrap">
+              <table class="tx-table">
+                <thead>
+                  <tr>
+                    <th style="width:48px">Situação</th>
+                    <th>Descrição</th>
+                    <th>Categoria</th>
+                    <th>Conta</th>
+                    <th>Efetivação</th>
+                    <th>Valor</th>
+                    <th style="width:110px">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tx-body-despesas">
+                  <tr class="tx-empty-row"><td colspan="7"><i class="bi bi-inbox"></i>Nenhuma despesa no período</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="tx-mobile-list" id="tx-mob-despesas"></div>
+            <div class="tx-bottom-bar">
+              <div class="tx-sum-group">
+                <span class="tx-sum-label"><i class="bi bi-check-circle-fill" style="color:#22c55e"></i> Efetivadas</span>
+                <span class="tx-sum-val green" id="tx-efetivadas">R$ 0,00</span>
+              </div>
+              <div class="tx-sum-group">
+                <span class="tx-sum-label"><i class="bi bi-clock-fill" style="color:#f59e0b"></i> Pendentes</span>
+                <span class="tx-sum-val orange" id="tx-pendentes">R$ 0,00</span>
+              </div>
+              <div class="tx-sum-group">
+                <span class="tx-sum-label"><i class="bi bi-dash-circle-fill" style="color:#ef4444"></i> Total</span>
+                <span class="tx-sum-val" id="tx-total-desp">R$ 0,00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Receitas -->
+          <div class="tx-panel hidden" id="tx-panel-receitas">
+            <div class="tx-table-wrap">
+              <table class="tx-table">
+                <thead>
+                  <tr>
+                    <th style="width:48px">Situação</th>
+                    <th>Descrição</th>
+                    <th>Categoria</th>
+                    <th>Conta</th>
+                    <th>Efetivação</th>
+                    <th>Valor</th>
+                    <th style="width:80px">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tx-body-receitas">
+                  <tr class="tx-empty-row"><td colspan="7"><i class="bi bi-inbox"></i>Nenhuma receita no período</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="tx-mobile-list" id="tx-mob-receitas"></div>
+            <div class="tx-bottom-bar">
+              <div class="tx-sum-group">
+                <span class="tx-sum-label"><i class="bi bi-plus-circle-fill" style="color:#22c55e"></i> Total recebido</span>
+                <span class="tx-sum-val green" id="tx-total-rec">R$ 0,00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Transferências -->
+          <div class="tx-panel hidden" id="tx-panel-transferencias">
+            <div class="tx-empty-state">
+              <i class="bi bi-arrow-down-up"></i>
+              <p>Nenhuma transferência registrada no período</p>
+            </div>
+          </div>
+
+          <!-- Extrato -->
+          <div class="tx-panel hidden" id="tx-panel-extrato">
+            <div class="tx-extrato-wrap" id="tx-extrato-list">
+              <div class="tx-empty-state"><i class="bi bi-receipt"></i><p>Nenhuma movimentação no período</p></div>
+            </div>
+          </div>
+        </div><!-- /#view-transacoes -->
+
+        <!-- ===== VIEW: CONTAS ===== -->
+        <div id="view-contas" class="dash-view hidden">
+            <div class="contas-wrapper">
+                <div class="contas-table-scroll">
+                    <table class="contas-table">
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th>Saldo inicial</th>
+                                <th>Receitas</th>
+                                <th>Despesas</th>
+                                <th>Transf. cred.</th>
+                                <th>Transf. deb.</th>
+                                <th>Saldo</th>
+                                <th>Previsto</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="conta-row">
+                                <td>
+                                    <div class="conta-desc">
+                                        <div class="conta-icon-circle" style="background:#1e293b">
+                                            <i class="bi bi-building-check"></i>
+                                        </div>
+                                        <span class="conta-nome" id="ct-conta-nome">Minha Conta Corrente</span>
+                                        <span class="conta-dot" style="background:#10b981"></span>
+                                    </div>
+                                </td>
+                                <td id="ct-saldo-inicial">R$ 0,00</td>
+                                <td id="ct-receitas">R$ 0,00</td>
+                                <td id="ct-despesas">R$ 0,00</td>
+                                <td>R$ 0,00</td>
+                                <td>R$ 0,00</td>
+                                <td id="ct-saldo" class="conta-saldo-bold">R$ 0,00</td>
+                                <td id="ct-previsto" class="conta-previsto">R$ 0,00</td>
+                                <td>
+                                    <div class="conta-acoes">
+                                        <button class="conta-action-btn" onclick="ctOpenEdit()" title="Editar conta"><i class="bi bi-pencil"></i></button>
+                                        <button class="conta-action-btn conta-action-del" onclick="ctOpenDel()" title="Excluir conta"><i class="bi bi-trash3"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="contas-footer">
+                    <div class="contas-footer-stats">
+                        <span class="cf-stat"><i class="bi bi-plus-circle-fill cf-green"></i> Receitas: <strong id="cf-receitas">R$ 0,00</strong></span>
+                        <span class="cf-stat"><i class="bi bi-dash-circle-fill cf-red"></i> Despesas: <strong id="cf-despesas">R$ 0,00</strong></span>
+                        <span class="cf-stat"><i class="bi bi-circle-fill cf-blue"></i> Saldo: <strong id="cf-saldo">R$ 0,00</strong></span>
+                        <span class="cf-stat"><i class="bi bi-clock cf-gray"></i> Previsto: <strong id="cf-previsto">R$ 0,00</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal editar conta -->
+        <div id="editContaModal" class="cofre-overlay hidden" style="z-index:10010" onclick="if(event.target===this)ctCloseEdit()">
+            <div class="ct-modal-card">
+                <button class="ct-modal-close" onclick="ctCloseEdit()"><i class="bi bi-x-lg"></i></button>
+                <div class="ct-modal-icon" style="background:rgba(59,130,246,0.12);color:#3b82f6">
+                    <i class="bi bi-pencil-square"></i>
+                </div>
+                <div class="ct-modal-title">Editar Conta</div>
+                <div class="ct-modal-sub">Altere o nome ou o saldo inicial da sua conta</div>
+                <div class="ct-modal-fields">
+                    <div class="ct-modal-field">
+                        <label class="ct-modal-label">Nome da conta</label>
+                        <input type="text" id="ec-nome" class="ct-modal-input" placeholder="Ex: Conta Corrente">
+                    </div>
+                    <div class="ct-modal-field">
+                        <label class="ct-modal-label">Saldo inicial</label>
+                        <input type="text" id="ec-saldo-inicial" class="ct-modal-input" placeholder="R$ 0,00" inputmode="numeric">
+                    </div>
+                </div>
+                <div class="ct-modal-btns">
+                    <button class="ct-modal-btn-cancel" onclick="ctCloseEdit()">Cancelar</button>
+                    <button class="ct-modal-btn-confirm" style="background:#3b82f6" onclick="ctSaveEdit()">Salvar alterações</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal excluir conta -->
+        <div id="delContaModal" class="cofre-overlay hidden" style="z-index:10010" onclick="if(event.target===this)ctCloseDel()">
+            <div class="ct-modal-card">
+                <button class="ct-modal-close" onclick="ctCloseDel()"><i class="bi bi-x-lg"></i></button>
+                <div class="ct-modal-icon" style="background:rgba(239,68,68,0.12);color:#ef4444">
+                    <i class="bi bi-trash3"></i>
+                </div>
+                <div class="ct-modal-title">Excluir Conta</div>
+                <div class="ct-modal-sub">Tem certeza? O nome voltará para o padrão.</div>
+                <div class="ct-modal-alert">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    O nome da conta voltará para <strong>Minha Conta Corrente</strong>.
+                </div>
+                <div class="ct-modal-btns">
+                    <button class="ct-modal-btn-cancel" onclick="ctCloseDel()">Cancelar</button>
+                    <button class="ct-modal-btn-confirm" style="background:#ef4444" onclick="ctConfirmDel()"><i class="bi bi-trash3"></i> Excluir</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== VIEW: ORÇAMENTOS ===== -->
+        <div id="view-orcamentos" class="dash-view hidden" style="padding:0">
+          <div class="orc-topbar">
+            <div class="orc-tabs">
+              <button class="orc-tab orc-tab-active" data-tipo="despesa">Despesas</button>
+              <button class="orc-tab" data-tipo="receita">Receitas</button>
+            </div>
+            <div class="orc-topbar-right">
+              <label class="orc-custom-toggle">
+                <span class="orc-toggle-label">Personalizados</span>
+                <span class="dep-switch">
+                  <input type="checkbox" id="orc-toggle-custom">
+                  <span class="dep-slider"></span>
+                </span>
+              </label>
+              <button class="obj-new-btn" id="orc-new-btn"><i class="bi bi-plus-lg"></i> Novo</button>
+            </div>
+          </div>
+
+          <div class="orc-table-wrap">
+            <table class="orc-table">
+              <thead>
+                <tr>
+                  <th>Descrição <i class="bi bi-arrow-up"></i></th>
+                  <th>Meta</th>
+                  <th id="orc-th-gasto">Despesas</th>
+                  <th>Saldo atual</th>
+                  <th>Saldo previsto</th>
+                  <th>Utilização</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="orc-tbody"></tbody>
+            </table>
+          </div>
+
+          <div class="orc-footer">
+            <div class="orc-foot-stats">
+              <span class="orc-foot-item"><i class="bi bi-bullseye orc-foot-icon"></i> Meta: <strong id="orc-foot-meta">R$ 0,00</strong></span>
+              <span class="orc-foot-item"><i class="bi bi-dash-circle orc-foot-icon"></i> <span id="orc-foot-label">Despesas:</span> <strong id="orc-foot-gasto">R$ 0,00</strong></span>
+              <span class="orc-foot-item"><i class="bi bi-circle orc-foot-icon"></i> Saldo disponível: <strong id="orc-foot-disp">R$ 0,00</strong></span>
+            </div>
+            <div class="orc-foot-bar-wrap">
+              <div class="orc-foot-bar" id="orc-foot-bar"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== VIEW: OBJETIVOS ===== -->
+        <div id="view-objetivos" class="dash-view hidden" style="padding:0">
+          <div class="obj-topbar">
+            <div class="obj-topbar-left">
+              <h2 class="obj-topbar-title"><i class="bi bi-bullseye"></i> Objetivos</h2>
+              <span class="obj-topbar-sub">Acompanhe suas metas financeiras</span>
+            </div>
+            <button class="obj-new-btn" id="obj-new-btn"><i class="bi bi-plus-lg"></i> Novo objetivo</button>
+          </div>
+          <div class="obj-body">
+            <div class="obj-grid" id="obj-grid"></div>
+            <div class="obj-empty hidden" id="obj-empty">
+              <div class="obj-empty-icon"><i class="bi bi-bullseye"></i></div>
+              <p class="obj-empty-title">Nenhum objetivo ainda</p>
+              <p class="obj-empty-sub">Crie seu primeiro objetivo e comece a poupar com foco!</p>
+              <button class="obj-new-btn" onclick="document.getElementById('obj-new-btn').click()">
+                <i class="bi bi-plus-lg"></i> Criar objetivo
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== VIEW: RELATÓRIOS ===== -->
+        <div id="view-relatorios" class="dash-view hidden" style="padding:0">
+
+          <!-- Tab bar -->
+          <div class="rel-tabbar">
+            <button class="rel-tab rel-tab-active" data-rel-tab="filtro">Filtro</button>
+          </div>
+
+          <!-- Filtro panel -->
+          <div class="rel-panel" id="rel-panel-filtro">
+            <div class="rel-two-col">
+
+              <!-- Coluna esquerda: filtros -->
+              <div class="rel-left">
+                <div class="rel-section-label">Filtro Geral</div>
+
+                <!-- Datas -->
+                <div class="rel-date-row">
+                  <div class="rel-date-field">
+                    <span class="rel-date-label">Data inicial</span>
+                    <div class="rel-date-wrap">
+                      <input type="date" id="rel-date-start" class="rel-date-inp">
+                      <i class="bi bi-calendar3 rel-date-ico"></i>
+                    </div>
+                  </div>
+                  <div class="rel-date-field">
+                    <span class="rel-date-label">Data final</span>
+                    <div class="rel-date-wrap">
+                      <input type="date" id="rel-date-end" class="rel-date-inp">
+                      <i class="bi bi-calendar3 rel-date-ico"></i>
+                    </div>
+                  </div>
+                  <button class="rel-dots-btn"><i class="bi bi-three-dots-vertical"></i></button>
+                </div>
+
+                <!-- Data de referência -->
+                <div class="rel-fg">
+                  <div class="rel-fg-label">Data de referência</div>
+                  <div class="rel-toggle-row" id="rel-ref-group">
+                    <button class="rel-tog" data-group="rel-ref-group" data-val="lancamento">
+                      <i class="bi bi-calendar-event"></i> Lançamento
+                    </button>
+                    <button class="rel-tog rel-tog-active" data-group="rel-ref-group" data-val="vencimento">
+                      <i class="bi bi-calendar-check"></i> Vencimento
+                    </button>
+                    <button class="rel-tog" data-group="rel-ref-group" data-val="efetivacao">
+                      <i class="bi bi-calendar-x"></i> Efetivação
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Situação -->
+                <div class="rel-fg">
+                  <div class="rel-fg-label">Situação</div>
+                  <div class="rel-toggle-row" id="rel-sit-group">
+                    <button class="rel-tog rel-tog-active" data-group="rel-sit-group" data-val="todas">
+                      <i class="bi bi-list-ul"></i> Todas
+                    </button>
+                    <button class="rel-tog" data-group="rel-sit-group" data-val="efetivadas">
+                      <i class="bi bi-check-circle"></i> Efetivadas
+                    </button>
+                    <button class="rel-tog" data-group="rel-sit-group" data-val="pendentes">
+                      <i class="bi bi-clock"></i> Pendentes
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Recorrência -->
+                <div class="rel-fg">
+                  <div class="rel-fg-label">Recorrência</div>
+                  <div class="rel-sel-wrap">
+                    <select id="rel-recorrencia" class="rel-sel">
+                      <option value="">Todas</option>
+                      <option value="avista">À vista</option>
+                      <option value="parcelado">Parcelado</option>
+                      <option value="recorrente">Recorrente</option>
+                    </select>
+                    <i class="bi bi-chevron-down rel-sel-ico"></i>
+                  </div>
+                </div>
+
+                <!-- Ordenar -->
+                <div class="rel-fg">
+                  <div class="rel-fg-label">Ordenar</div>
+                  <div class="rel-sel-wrap">
+                    <select id="rel-ordenar" class="rel-sel">
+                      <option value="venc-asc">Vencimento crescente</option>
+                      <option value="venc-desc">Vencimento decrescente</option>
+                      <option value="valor-desc">Maior valor</option>
+                      <option value="valor-asc">Menor valor</option>
+                      <option value="desc-asc">Descrição A-Z</option>
+                    </select>
+                    <i class="bi bi-chevron-down rel-sel-ico"></i>
+                  </div>
+                </div>
+
+                <!-- Categorias -->
+                <div class="rel-fg">
+                  <div class="rel-fg-label">Categorias despesas</div>
+                  <div class="rel-chips" id="rel-cat-chips">
+                    <button class="rel-chip rel-chip-active" data-cat=""><i class="bi bi-pencil"></i> Todas</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Coluna direita: visualização -->
+              <div class="rel-right">
+
+                <!-- Agrupar por -->
+                <div class="rel-fg">
+                  <div class="rel-fg-label">Agrupar por</div>
+                  <div class="rel-toggle-row rel-toggle-row-fill" id="rel-group-group">
+                    <button class="rel-tog rel-tog-active" data-group="rel-group-group" data-val="nenhum">
+                      <i class="bi bi-grid-3x3-gap"></i> Nenhum
+                    </button>
+                    <button class="rel-tog" data-group="rel-group-group" data-val="categoria">
+                      <i class="bi bi-tag"></i> Categoria
+                    </button>
+                    <button class="rel-tog" data-group="rel-group-group" data-val="subcategoria">
+                      <i class="bi bi-tags"></i> Subcategoria
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Tipo de visualização -->
+                <div class="rel-fg">
+                  <div class="rel-fg-label">Tipo de visualização</div>
+                  <div class="rel-toggle-row rel-toggle-row-fill" id="rel-vis-group">
+                    <button class="rel-tog" data-group="rel-vis-group" data-val="diaria">
+                      <i class="bi bi-graph-up"></i> Evolução diária
+                    </button>
+                    <button class="rel-tog" data-group="rel-vis-group" data-val="mensal">
+                      <i class="bi bi-envelope-open"></i> Evolução mensal
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Descrição -->
+                <div class="rel-fg">
+                  <div class="rel-fg-label">Descrição da transação</div>
+                  <input type="text" id="rel-desc-filter" class="rel-text-inp" placeholder="Descrição">
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Apply bar -->
+            <div class="rel-apply-bar">
+              <button class="rel-apply-btn" id="rel-apply-btn">
+                <i class="bi bi-funnel-fill"></i> Aplicar filtro
+              </button>
+              <button class="rel-clear-btn" id="rel-clear-btn">
+                <i class="bi bi-x-lg"></i> Limpar
+              </button>
+            </div>
+
+            <!-- Results -->
+            <div class="rel-results" id="rel-results">
+              <div class="rel-results-empty">
+                <i class="bi bi-funnel"></i>
+                <p>Clique em <strong>Aplicar filtro</strong> para ver os resultados.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ===== VIEW: GRÁFICOS ===== -->
+        <div id="view-graficos" class="dash-view hidden" style="padding:0">
+          <div class="graf-tabbar">
+            <button class="graf-tab graf-tab-active" data-graf-tab="despesas">Despesas</button>
+            <button class="graf-tab" data-graf-tab="receitas">Receitas</button>
+            <button class="graf-tab" data-graf-tab="outros">Outros</button>
+          </div>
+
+          <div class="graf-body">
+            <!-- Coluna esquerda -->
+            <div class="graf-col">
+
+              <!-- Ranking categorias -->
+              <div class="graf-card">
+                <div class="graf-card-hdr">
+                  <span class="graf-card-title">Ranking categorias</span>
+                  <div class="graf-hdr-acts">
+                    <button class="graf-icon-btn"><i class="bi bi-box-arrow-up-right"></i></button>
+                    <button class="graf-icon-btn"><i class="bi bi-three-dots-vertical"></i></button>
+                  </div>
+                </div>
+                <div class="graf-ranking-body">
+                  <div class="graf-ranking-chart-wrap"><canvas id="grafRankingChart"></canvas></div>
+                  <div id="graf-ranking-top"></div>
+                </div>
+                <div class="graf-ranking-summary" id="graf-ranking-summary"></div>
+              </div>
+
+              <!-- Por recorrência -->
+              <div class="graf-card">
+                <div class="graf-card-hdr">
+                  <span class="graf-card-title">Despesas por recorrência</span>
+                  <button class="graf-icon-btn"><i class="bi bi-three-dots-vertical"></i></button>
+                </div>
+                <div class="graf-donut-wrap" style="height:180px">
+                  <canvas id="grafRecorrenciaChart"></canvas>
+                  <div class="graf-donut-center" id="graf-rec-center">R$ 0,00<br><small>Total</small></div>
+                </div>
+                <div class="graf-leg" id="graf-rec-legend"></div>
+              </div>
+
+              <!-- Evolução 7 dias -->
+              <div class="graf-card">
+                <div class="graf-card-hdr">
+                  <div>
+                    <div class="graf-card-title">Evolução das despesas</div>
+                    <div class="graf-card-sub">Últimos 7 dias</div>
+                  </div>
+                  <button class="graf-icon-btn"><i class="bi bi-three-dots-vertical"></i></button>
+                </div>
+                <div style="height:160px;position:relative"><canvas id="grafEvolucaoChart"></canvas></div>
+              </div>
+
+              <!-- Últimos 6 meses -->
+              <div class="graf-card">
+                <div class="graf-card-hdr">
+                  <span class="graf-card-title">Últimos 6 meses</span>
+                  <button class="graf-icon-btn"><i class="bi bi-three-dots-vertical"></i></button>
+                </div>
+                <div style="height:150px;position:relative"><canvas id="grafSeisMesesChart"></canvas></div>
+              </div>
+
+            </div>
+
+            <!-- Coluna direita -->
+            <div class="graf-col">
+
+              <!-- Categoria linha -->
+              <div class="graf-card">
+                <div class="graf-card-hdr">
+                  <div>
+                    <div class="graf-card-title">Categoria Despesa</div>
+                    <div class="graf-card-sub" id="graf-cat-total">R$ 0,00</div>
+                  </div>
+                  <div class="graf-hdr-acts">
+                    <button class="graf-icon-btn"><i class="bi bi-box-arrow-up-right"></i></button>
+                    <button class="graf-icon-btn"><i class="bi bi-list-ul"></i></button>
+                    <button class="graf-icon-btn"><i class="bi bi-three-dots-vertical"></i></button>
+                  </div>
+                </div>
+                <div class="graf-cat-filter">
+                  <span class="graf-cat-filter-label">Categorias</span>
+                  <select id="graf-cat-select" class="graf-select"><option value="">Todas</option></select>
+                  <i class="bi bi-chevron-down" style="color:rgba(255,255,255,0.3);font-size:0.75rem"></i>
+                </div>
+                <div style="height:160px;position:relative"><canvas id="grafCatChart"></canvas></div>
+              </div>
+
+              <!-- Por categoria donut -->
+              <div class="graf-card">
+                <div class="graf-card-hdr">
+                  <span class="graf-card-title">Despesas por categoria</span>
+                  <div class="graf-hdr-acts">
+                    <button class="graf-icon-btn"><i class="bi bi-box-arrow-up-right"></i></button>
+                    <button class="graf-icon-btn"><i class="bi bi-three-dots-vertical"></i></button>
+                  </div>
+                </div>
+                <div class="graf-donut-wrap" style="height:200px">
+                  <canvas id="grafCatPieChart"></canvas>
+                  <div class="graf-donut-center" id="graf-cat-pie-center">R$ 0,00<br><small>Total</small></div>
+                </div>
+                <div class="graf-leg" id="graf-cat-pie-legend"></div>
+              </div>
+
+              <!-- Débito x Crédito -->
+              <div class="graf-card">
+                <div class="graf-card-hdr">
+                  <span class="graf-card-title">Despesas Débito x Crédito</span>
+                  <button class="graf-icon-btn"><i class="bi bi-three-dots-vertical"></i></button>
+                </div>
+                <div class="graf-donut-wrap" style="height:180px">
+                  <canvas id="grafDCChart"></canvas>
+                  <div class="graf-donut-center" id="graf-dc-center">R$ 0,00<br><small>Total</small></div>
+                </div>
+                <div class="graf-leg" id="graf-dc-legend"></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== VIEW: CALENDÁRIO ===== -->
+        <div id="view-calendario" class="dash-view hidden" style="padding:0">
+          <!-- preenchido por renderCalendario() -->
+        </div>
+
+        <!-- ===== VIEW: CATEGORIAS ===== -->
+        <div id="view-categorias" class="dash-view hidden" style="padding:0">
+          <!-- top bar: tabs + add button -->
+          <div class="cat-topbar">
+            <div class="cat-tabs">
+              <button class="cat-tab cat-tab-active" data-cat-tab="despesa">Despesas</button>
+              <button class="cat-tab" data-cat-tab="receita">Receitas</button>
+              <button class="cat-tab" data-cat-tab="conta">Contas</button>
+            </div>
+            <button class="cat-add-top-btn" id="cat-add-btn">
+              <i class="bi bi-plus-lg"></i> Nova Categoria
+            </button>
+          </div>
+
+          <!-- two-column body -->
+          <div class="cat-body">
+            <!-- Left: category list -->
+            <div class="cat-panel">
+              <div class="cat-list-header">
+                <span class="cat-col-name">Nome ↑</span>
+                <span class="cat-col-total">Total</span>
+                <span class="cat-col-acoes">Ações</span>
+              </div>
+              <div class="cat-rows" id="cat-list"></div>
+              <div class="cat-panel-footer">
+                <span id="cat-count">Categorias (0)</span>
+                <span>Total: <strong id="cat-total">R$ 0,00</strong></span>
+              </div>
+            </div>
+
+            <!-- Right: subcategories (shown on selection) -->
+            <div class="cat-panel hidden" id="cat-right">
+              <div class="cat-sub-topbar">
+                <span id="cat-sub-title">Subcategorias</span>
+                <button class="cat-sub-add-btn" id="cat-sub-add-btn">
+                  <i class="bi bi-plus-lg"></i> Nova subcategoria
+                </button>
+              </div>
+              <div class="cat-list-header">
+                <span class="cat-col-name">Nome ↑</span>
+                <span class="cat-col-total">Total</span>
+                <span class="cat-col-acoes">Ações</span>
+              </div>
+              <div class="cat-rows" id="cat-sub-list"></div>
+              <div class="cat-panel-footer">
+                <span id="cat-sub-count">Subcategorias (0)</span>
+                <span>Total: <strong id="cat-sub-total">R$ 0,00</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+    </div><!-- /.dash-main -->
 
     <!-- Input OFX oculto -->
     <input type="file" id="ofxFileInput" accept=".ofx" style="display:none">
 
     <!-- Menu mobile -->
     <div class="mobile-menu" id="mobileMenu">
-        <button id="openChartBtnMobile" class="mobile-menu-item">
-            <i class="bi bi-graph-up"></i> Resumo Anual
-        </button>
         <button id="cofreMobileBtn" class="mobile-menu-item">
             <i class="bi bi-safe2"></i> Meu Cofre
         </button>
@@ -70,173 +1009,6 @@
             <i class="bi bi-box-arrow-right"></i> Sair
         </button>
     </div>
-
-    <div class="container">
-        <div class="section" style="margin-bottom: 20px;">
-            <h2><i class="bi bi-calendar3"></i> Filtro</h2>
-
-            <div class="main-content">
-                <div class="form-group">
-                    <label for="filterMonth">Mês</label>
-                    <select id="filterMonth">
-                        <option value="0">Janeiro</option>
-                        <option value="1">Fevereiro</option>
-                        <option value="2">Março</option>
-                        <option value="3">Abril</option>
-                        <option value="4">Maio</option>
-                        <option value="5">Junho</option>
-                        <option value="6">Julho</option>
-                        <option value="7">Agosto</option>
-                        <option value="8">Setembro</option>
-                        <option value="9">Outubro</option>
-                        <option value="10">Novembro</option>
-                        <option value="11">Dezembro</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="filterYear">Ano</label>
-                    <select id="filterYear"></select>
-                </div>
-            </div>
-        </div>
-        <!-- Dashboard de Resumo -->
-        <div class="dashboard">
-            <div class="card card-income">
-                <div class="card-header">
-                    <h3>Receitas</h3>
-                    <span class="card-icon income-icon"><i class="bi bi-wallet2"></i></span>
-                </div>
-                <div class="card-value income" id="totalIncome">R$ 0,00</div>
-                <div class="card-label">Total de entradas</div>
-            </div>
-
-            <div class="card card-expense">
-                <div class="card-header">
-                    <h3>Despesas</h3>
-                    <span class="card-icon expense-icon"><i class="bi bi-arrow-down-circle"></i></span>
-                </div>
-                <div class="card-value expense" id="totalExpense">R$ 0,00</div>
-                <div class="card-label">Total de saídas</div>
-            </div>
-
-            <div class="card card-profit">
-                <div class="card-header">
-                    <h3>Lucro</h3>
-                    <span class="card-icon profit-icon"><i class="bi bi-graph-up-arrow"></i></span>
-                </div>
-                <div class="card-value profit" id="totalProfit" title="Clique 5x rápido!">R$ 0,00</div>
-                <div class="card-label">Receitas - Despesas</div>
-            </div>
-
-            <div class="card card-balance">
-                <div class="card-header">
-                    <h3>Saldo</h3>
-                    <span class="card-icon balance-icon"><i class="bi bi-gem"></i></span>
-                </div>
-                <div class="card-value balance" id="currentBalance">R$ 0,00</div>
-                <div class="card-label">Saldo atual</div>
-            </div>
-        </div>
-
-
-
-
-        <!-- Conteúdo Principal -->
-        <div class="main-content">
-            <!-- Adicionar Receita -->
-            <div class="section">
-                <h2><i class="bi bi-plus-circle"></i> Adicionar Receita</h2>
-                <form id="incomeForm">
-                    <div class="form-group">
-                        <label for="incomeDescription">Descrição</label>
-                        <input type="text" id="incomeDescription" placeholder="Ex: Salário, Freelance..." required>
-                    </div>
-                    <div class="form-group">
-                        <label for="incomeAmount">Valor (R$)</label>
-                        <input type="text" id="incomeAmount" placeholder="R$ 0,00" inputmode="numeric" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="incomeCategory">Categoria</label>
-                        <select id="incomeCategory" required>
-                            <option value="salario">Salário</option>
-                            <option value="freelance">Freelance</option>
-                            <option value="investimentos">Investimentos</option>
-                            <option value="outros">Outros</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="incomeDate">Data</label>
-                        <input type="date" id="incomeDate" required>
-                    </div>
-                    <button type="submit" class="btn btn-income"><i class="bi bi-plus-lg"></i> Adicionar Receita</button>
-                </form>
-            </div>
-
-            <!-- Adicionar Despesa -->
-            <div class="section">
-                <h2><i class="bi bi-dash-circle"></i> Adicionar Despesa</h2>
-                <form id="expenseForm">
-                    <div class="form-group">
-                        <label for="expenseDescription">Descrição</label>
-                        <input type="text" id="expenseDescription" placeholder="Ex: Supermercado, Aluguel..." required>
-                    </div>
-                    <div class="form-group">
-                        <label for="expenseAmount">Valor (R$)</label>
-                        <input type="text" id="expenseAmount" placeholder="R$ 0,00" inputmode="numeric" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="expenseCategory">Categoria</label>
-                        <select id="expenseCategory" required>
-                            <option value="alimentacao"> Alimentação</option>
-                            <option value="transporte">Transporte</option>
-                            <option value="moradia"> Moradia</option>
-                            <option value="lazer"> Lazer</option>
-                            <option value="saude"> Saúde</option>
-                            <option value="educacao"> Educação</option>
-                            <option value="outros"> Outros</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="expenseDate">Data</label>
-                        <input type="date" id="expenseDate" required>
-                    </div>
-                    <button type="submit" class="btn btn-expense"><i class="bi bi-dash-lg"></i> Adicionar Despesa</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Lista de Transações -->
-        <div class="main-content">
-            <div class="section">
-                <h2><i class="bi bi-clock-history"></i> Histórico de Receitas</h2>
-                <div class="transaction-list" id="incomeList">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <i class="bi bi-inbox"></i>
-                        </div>
-                        <p>Nenhuma receita registrada ainda</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="section">
-                <h2><i class="bi bi-clock-history"></i> Histórico de Despesas</h2>
-                <div class="transaction-list" id="expenseList">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <i class="bi bi-inbox"></i>
-                        </div>
-                        <p>Nenhuma despesa registrada ainda</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-
-    <script type="module" src="js/app.js"></script>
 
     <!-- ===== MODAL COFRE PRINCIPAL ===== -->
     <div id="cofreModal" class="cofre-overlay hidden">
@@ -310,40 +1082,58 @@
 
     <!-- Modal Editar Transação -->
     <div id="editModal" class="cofre-overlay hidden" style="z-index:10001">
-        <div class="cofre-form-card">
+        <div class="cofre-form-card nf-modal">
             <button class="cofre-modal-close" id="closeEditBtn">
                 <i class="bi bi-x-lg"></i>
             </button>
-            <div class="cofre-modal-emoji" id="editModalIcon"><i class="bi bi-pencil-square"></i></div>
-            <h2 class="cofre-form-title" id="editModalTitle">Editar</h2>
-            <div class="form-group">
-                <label>Descrição</label>
-                <input type="text" id="editDescription" placeholder="Descrição">
+            <div class="nf-header" id="editModalHeader" style="--nf-glow:rgba(99,102,241,0.13)">
+                <div class="nf-hdr-main">
+                    <img src="assets/logo_financas (1).png" class="nf-hdr-logo" alt="">
+                    <div class="nf-hdr-text">
+                        <h2 class="nf-hdr-title" id="editModalTitle">Editar</h2>
+                        <p class="nf-hdr-sub">Altere os dados da transação</p>
+                    </div>
+                    <div class="nf-hdr-icon" id="editModalIcon" style="background:rgba(99,102,241,0.15);color:#6366f1;border-color:rgba(99,102,241,0.25)">
+                        <i class="bi bi-pencil-fill"></i>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Valor (R$)</label>
-                <input type="text" id="editAmount" placeholder="R$ 0,00" inputmode="numeric">
+            <div style="padding: 20px 24px 0">
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <input type="text" id="editDescription" placeholder="Descrição">
+                </div>
+                <div class="nf-row">
+                    <div class="form-group" style="flex:1">
+                        <label>Valor (R$)</label>
+                        <input type="text" id="editAmount" placeholder="R$ 0,00" inputmode="numeric">
+                    </div>
+                    <div class="form-group" style="flex:1">
+                        <label>Data</label>
+                        <input type="date" id="editDate">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <select id="editCategory"></select>
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <div class="pt-btns">
+                        <button type="button" class="pt-btn pt-active" id="editTipoUnica" data-type="unica">Única</button>
+                        <button type="button" class="pt-btn" id="editTipoRecorrente" data-type="recorrente">Recorrente</button>
+                    </div>
+                </div>
+                <button class="btn" id="editConfirmBtn" style="margin-top:4px;width:100%">
+                    <i class="bi bi-check-lg"></i> Salvar
+                </button>
             </div>
-            <div class="form-group">
-                <label>Categoria</label>
-                <select id="editCategory"></select>
-            </div>
-            <div class="form-group">
-                <label>Data</label>
-                <input type="date" id="editDate">
-            </div>
-            <button class="btn cofre-confirm-btn" id="editConfirmBtn">
-                <i class="bi bi-check-lg"></i> Salvar
-            </button>
         </div>
     </div>
 
-    <!-- 🎛️ Barra fixa de ações -->
+    <!-- Barra fixa de ações -->
     <div class="action-bar">
-
-
     </div>
-
 
     <!-- Modal de Configuração do Atalho iPhone -->
     <div id="shortcutModal" class="robot-modal hidden">
@@ -393,25 +1183,54 @@
         </div>
     </div>
 
-    <!-- 📈 Modal do gráfico anual -->
-    <div id="chartModal" class="chart-modal hidden">
-        <div class="chart-card">
+    <!-- Modal do gráfico anual -->
+    <!-- Modal Saldo Inicial -->
+    <div id="saldoInicialModal" class="cofre-overlay hidden" style="z-index:10002">
+      <div style="background:#1c1c1f;border:1px solid rgba(255,255,255,0.08);border-radius:18px;max-width:320px;width:92%;padding:18px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
 
-            <div class="chart-header">
-                <h3>
-                    <i class="bi bi-graph-up"></i>
-                    Comparativo Anual
-                </h3>
+        <button id="closeSaldoInicialBtn" style="position:absolute;top:10px;right:10px;background:none;border:none;color:rgba(255,255,255,0.3);cursor:pointer;font-size:1rem;line-height:1;padding:4px"><i class="bi bi-x-lg"></i></button>
 
-                <button class="close-btn" id="closeChartBtn">
-                    <i class="bi bi-x-lg"></i>
-                </button>
+        <p style="font-size:0.75rem;font-weight:600;color:rgba(255,255,255,0.35);margin:0 0 12px;text-transform:uppercase;letter-spacing:0.06em">Ajustar saldo</p>
+
+        <div style="background:rgba(255,255,255,0.04);border-radius:9px;padding:3px;display:flex;margin-bottom:14px">
+          <button class="saldo-tab saldo-tab-active" id="tabCalibar" style="flex:1;padding:7px;border-radius:6px;font-size:0.78rem;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px">
+            <i class="bi bi-bullseye"></i> Pelo banco
+          </button>
+          <button class="saldo-tab" id="tabDireto" style="flex:1;padding:7px;border-radius:6px;font-size:0.78rem;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px">
+            <i class="bi bi-pencil"></i> Manual
+          </button>
+        </div>
+
+        <div id="saldoPeloBanco">
+          <input type="text" id="saldoBancarioInput" placeholder="R$ 0,00" inputmode="numeric"
+            style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#fff;font-size:1.15rem;font-weight:700;text-align:center;box-sizing:border-box;outline:none;margin-bottom:8px">
+          <div id="calibracaoPreview" class="hidden" style="background:rgba(129,140,248,0.06);border:1px solid rgba(129,140,248,0.14);border-radius:9px;padding:10px 12px;margin-bottom:8px;font-size:0.8rem;color:rgba(255,255,255,0.45);line-height:1.9"></div>
+          <button class="btn" id="calibrarSaldoBtn" style="width:100%;padding:11px;border-radius:10px;border:none;background:#6366f1;color:#fff;font-size:0.86rem;font-weight:600;cursor:pointer">
+            Calibrar saldo
+          </button>
+        </div>
+
+        <div id="saldoDireto" class="hidden">
+          <input type="text" id="saldoInicialInput" placeholder="R$ 0,00" inputmode="numeric"
+            style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#fff;font-size:1.15rem;font-weight:700;text-align:center;box-sizing:border-box;outline:none;margin-bottom:8px">
+          <button class="btn" id="salvarSaldoInicialBtn" style="width:100%;padding:11px;border-radius:10px;border:none;background:#10b981;color:#fff;font-size:0.86rem;font-weight:600;cursor:pointer">
+            Salvar
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Modal Diagnóstico -->
+    <div id="diagnosticoModal" class="cofre-overlay hidden" style="z-index:10002">
+        <div class="ofx-resumo-card" style="max-width:480px">
+            <button class="cofre-modal-close" id="closeDiagnosticoBtn"><i class="bi bi-x-lg"></i></button>
+            <div id="diagnosticoContent">
+                <div class="ofx-progresso">
+                    <div class="ofx-spinner"></div>
+                    <p>Carregando diagnóstico...</p>
+                </div>
             </div>
-
-            <div class="chart-body">
-                <canvas id="financeChart"></canvas>
-            </div>
-
         </div>
     </div>
 
@@ -428,6 +1247,404 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- ===== MODAL: NOVA DESPESA ===== -->
+    <div id="novaDespesaModal" class="cofre-overlay hidden" style="z-index:10003">
+        <div class="cofre-form-card nf-modal">
+            <button class="cofre-modal-close" id="closeNovaDespesaBtn"><i class="bi bi-x-lg"></i></button>
+            <div class="nf-header" style="--nf-glow:rgba(239,68,68,0.13)">
+                <div class="nf-hdr-main">
+                    <img src="assets/logo_financas (1).png" class="nf-hdr-logo" alt="">
+                    <div class="nf-hdr-text">
+                        <h2 class="nf-hdr-title">Nova Despesa</h2>
+                        <p class="nf-hdr-sub">Registre um gasto</p>
+                    </div>
+                    <div class="nf-hdr-icon" style="background:rgba(239,68,68,0.15);color:#ef4444;border-color:rgba(239,68,68,0.25)">
+                        <i class="bi bi-dash-circle-fill"></i>
+                    </div>
+                </div>
+            </div>
+            <form id="novaDespesaForm">
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <input type="text" id="nd-desc" placeholder="Ex: Supermercado, Aluguel..." required>
+                </div>
+                <div class="form-group">
+                    <label>Valor (R$)</label>
+                    <input type="text" id="nd-amount" placeholder="R$ 0,00" inputmode="numeric" required>
+                </div>
+                <div class="nf-row">
+                    <div class="form-group" style="flex:1">
+                        <label>Categoria</label>
+                        <select id="nd-category">
+                            <option value="alimentacao">Alimentação</option>
+                            <option value="transporte">Transporte</option>
+                            <option value="moradia">Moradia</option>
+                            <option value="lazer">Lazer</option>
+                            <option value="saude">Saúde</option>
+                            <option value="educacao">Educação</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1">
+                        <label>Data</label>
+                        <input type="date" id="nd-date" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <div class="pt-btns">
+                        <button type="button" class="pt-btn pt-active pt-green" data-type="unica">Única</button>
+                        <button type="button" class="pt-btn" data-type="recorrente">Recorrente</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-expense" style="margin-top:8px">
+                    <i class="bi bi-check-lg"></i> Registrar Despesa
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: NOVA RECEITA ===== -->
+    <div id="novaReceitaModal" class="cofre-overlay hidden" style="z-index:10003">
+        <div class="cofre-form-card nf-modal">
+            <button class="cofre-modal-close" id="closeNovaReceitaBtn"><i class="bi bi-x-lg"></i></button>
+            <div class="nf-header" style="--nf-glow:rgba(16,185,129,0.13)">
+                <div class="nf-hdr-main">
+                    <img src="assets/logo_financas (1).png" class="nf-hdr-logo" alt="">
+                    <div class="nf-hdr-text">
+                        <h2 class="nf-hdr-title">Nova Receita</h2>
+                        <p class="nf-hdr-sub">Registre uma entrada</p>
+                    </div>
+                    <div class="nf-hdr-icon" style="background:rgba(16,185,129,0.15);color:#10b981;border-color:rgba(16,185,129,0.25)">
+                        <i class="bi bi-plus-circle-fill"></i>
+                    </div>
+                </div>
+            </div>
+            <form id="novaReceitaForm">
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <input type="text" id="nr-desc" placeholder="Ex: Salário, Freelance..." required>
+                </div>
+                <div class="form-group">
+                    <label>Valor (R$)</label>
+                    <input type="text" id="nr-amount" placeholder="R$ 0,00" inputmode="numeric" required>
+                </div>
+                <div class="nf-row">
+                    <div class="form-group" style="flex:1">
+                        <label>Categoria</label>
+                        <select id="nr-category">
+                            <option value="salario">Salário</option>
+                            <option value="freelance">Freelance</option>
+                            <option value="investimentos">Investimentos</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1">
+                        <label>Data</label>
+                        <input type="date" id="nr-date" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <div class="pt-btns">
+                        <button type="button" class="pt-btn pt-active pt-green" data-type="unica">Única</button>
+                        <button type="button" class="pt-btn" data-type="recorrente">Recorrente</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-income" style="margin-top:8px">
+                    <i class="bi bi-check-lg"></i> Registrar Receita
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ===== MODAL: NOVA TRANSFERÊNCIA ===== -->
+    <div id="novaTransferenciaModal" class="cofre-overlay hidden" style="z-index:10003">
+        <div class="cofre-form-card nf-modal">
+            <button class="cofre-modal-close" id="closeNovaTransferenciaBtn"><i class="bi bi-x-lg"></i></button>
+            <div class="nf-header" style="--nf-glow:rgba(245,158,11,0.13)">
+                <div class="nf-hdr-main">
+                    <img src="assets/logo_financas (1).png" class="nf-hdr-logo" alt="">
+                    <div class="nf-hdr-text">
+                        <h2 class="nf-hdr-title">Nova Transferência</h2>
+                        <p class="nf-hdr-sub">Movimentação entre contas</p>
+                    </div>
+                    <div class="nf-hdr-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b;border-color:rgba(245,158,11,0.25)">
+                        <i class="bi bi-arrow-down-up"></i>
+                    </div>
+                </div>
+            </div>
+            <form id="novaTransferenciaForm">
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <input type="text" id="nt-desc" placeholder="Ex: Reserva de emergência..." required>
+                </div>
+                <div class="form-group">
+                    <label>Valor (R$)</label>
+                    <input type="text" id="nt-amount" placeholder="R$ 0,00" inputmode="numeric" required>
+                </div>
+                <div class="form-group">
+                    <label>Data</label>
+                    <input type="date" id="nt-date" required>
+                </div>
+                <button type="submit" class="btn" style="background:#f59e0b;color:#000;font-weight:700;margin-top:8px">
+                    <i class="bi bi-check-lg"></i> Registrar Transferência
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Script de navegação de meses (inline, não-module) -->
+    <script src="js/dashboard-init.js"></script>
+
+    <!-- Modal Nova Categoria / Subcategoria -->
+    <div id="novaCategoriaModal" class="cofre-overlay hidden" style="z-index:10004">
+        <div class="cofre-form-card cat-modal-card">
+            <button class="cofre-modal-close" id="closeCatModal"><i class="bi bi-x-lg"></i></button>
+            <div class="cat-preview-wrap">
+                <div class="cat-preview-icon" id="cat-preview-icon"><i class="bi bi-tag-fill"></i></div>
+            </div>
+            <h2 class="cofre-form-title" id="cat-modal-title">Nova Categoria</h2>
+            <div class="form-group">
+                <label>Nome</label>
+                <input type="text" id="cat-modal-nome" placeholder="Ex: Alimentação, Viagem...">
+            </div>
+            <div class="form-group">
+                <label>Ícone</label>
+                <div class="cat-icon-picker" id="cat-icon-picker"></div>
+            </div>
+            <div class="form-group">
+                <label>Cor</label>
+                <div class="cat-color-picker" id="cat-color-picker"></div>
+            </div>
+            <button class="btn cofre-confirm-btn" id="cat-save-btn">
+                <i class="bi bi-check-lg"></i> Salvar
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: ORÇAMENTO ===== -->
+    <div id="orc-modal" class="cofre-overlay hidden" style="z-index:10004">
+      <div class="obj-modal-card" style="max-width:480px">
+        <div class="obj-modal-hdr">
+          <div id="orc-modal-preview" class="obj-modal-preview"><i class="bi bi-percent"></i></div>
+          <div>
+            <h2 id="orc-modal-title" class="obj-modal-htitle">Novo Orçamento</h2>
+            <p class="obj-modal-hsub">Defina um limite para seus gastos</p>
+          </div>
+          <button class="cofre-modal-close" id="orc-close-btn"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <form id="orc-form" onsubmit="return false">
+          <div class="obj-form-row">
+            <div class="form-group" style="flex:2">
+              <label>Nome</label>
+              <input type="text" id="orc-nome" placeholder="Ex: Alimentação, Lazer..." required>
+            </div>
+            <div class="form-group" style="flex:1">
+              <label>Tipo</label>
+              <select id="orc-tipo">
+                <option value="despesa">Despesa</option>
+                <option value="receita">Receita</option>
+              </select>
+            </div>
+          </div>
+          <div class="obj-form-row">
+            <div class="form-group" style="flex:1">
+              <label>Meta (R$)</label>
+              <input type="text" id="orc-meta" placeholder="R$ 0,00" inputmode="numeric">
+            </div>
+            <div class="form-group" style="flex:1">
+              <label>Categoria <span style="opacity:0.4;font-weight:400">(opcional)</span></label>
+              <input type="text" id="orc-categoria" placeholder="Ex: alimentacao">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Ícone</label>
+            <div class="obj-icon-picker" id="orc-icon-picker"></div>
+          </div>
+          <div class="form-group">
+            <label>Cor</label>
+            <div class="obj-color-picker" id="orc-color-picker"></div>
+          </div>
+          <button type="button" class="btn cofre-confirm-btn" id="orc-save-btn" style="background:linear-gradient(135deg,#ef4444,#dc2626)">
+            <i class="bi bi-check-lg"></i> Salvar
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ===== MODAL: NOVO OBJETIVO ===== -->
+    <div id="obj-modal" class="cofre-overlay hidden" style="z-index:10004">
+      <div class="obj-modal-card">
+        <div class="obj-modal-hdr">
+          <div id="obj-modal-preview" class="obj-modal-preview"><img src="assets/logo_financas (1).png" style="width:30px;height:30px;object-fit:contain"></div>
+          <div>
+            <h2 id="obj-modal-title" class="obj-modal-htitle">Novo Objetivo</h2>
+            <p class="obj-modal-hsub">Defina sua meta e acompanhe o progresso</p>
+          </div>
+          <button class="cofre-modal-close" id="obj-close-btn"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <form id="obj-form" onsubmit="return false">
+          <div class="obj-form-row">
+            <div class="form-group" style="flex:2">
+              <label>Nome do objetivo</label>
+              <input type="text" id="obj-nome" placeholder="Ex: Viagem, Carro novo..." required>
+            </div>
+            <div class="form-group" style="flex:1">
+              <label>Saldo inicial</label>
+              <input type="text" id="obj-saldo-ini" placeholder="R$ 0,00" inputmode="numeric">
+            </div>
+          </div>
+          <div class="obj-form-row">
+            <div class="form-group" style="flex:1">
+              <label>Meta (R$)</label>
+              <input type="text" id="obj-meta" placeholder="R$ 0,00" inputmode="numeric" required>
+            </div>
+            <div class="form-group" style="flex:1">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <label style="margin:0">Espero alcançar em</label>
+                <button type="button" id="obj-sem-prazo-btn" class="obj-sem-prazo-btn">Sem prazo</button>
+              </div>
+              <input type="date" id="obj-prazo">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Descrição <span style="opacity:0.4;font-weight:400">(opcional)</span></label>
+            <input type="text" id="obj-descricao" placeholder="Ex: Férias em família...">
+          </div>
+          <div class="form-group">
+            <label>Ícone</label>
+            <div class="obj-icon-picker" id="obj-icon-picker"></div>
+          </div>
+          <div class="form-group">
+            <label>Cor do objetivo</label>
+            <div class="obj-color-picker" id="obj-color-picker"></div>
+          </div>
+          <button type="button" class="btn cofre-confirm-btn" id="obj-save-btn" style="background:linear-gradient(135deg,#3b82f6,#6366f1)">
+            <i class="bi bi-check-lg"></i> Salvar
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ===== MODAL: DEPOSITAR OBJETIVO ===== -->
+    <div id="dep-modal" class="cofre-overlay hidden" style="z-index:10004">
+      <div class="obj-modal-card" style="max-width:420px">
+        <div class="obj-modal-hdr">
+          <div id="dep-obj-avatar" class="obj-modal-preview"><i class="bi bi-bullseye"></i></div>
+          <div>
+            <h2 class="obj-modal-htitle" id="dep-modal-title">Depositar</h2>
+            <p id="dep-obj-nome" class="obj-modal-hsub">Objetivo</p>
+          </div>
+          <button class="cofre-modal-close" id="dep-close-btn"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="form-group">
+          <label>Valor</label>
+          <input type="text" id="dep-valor" placeholder="R$ 0,00" inputmode="numeric">
+        </div>
+        <div class="form-group">
+          <label>Data</label>
+          <input type="date" id="dep-data">
+        </div>
+        <div class="form-group">
+          <label>Observações <span style="opacity:0.4;font-weight:400">(opcional)</span></label>
+          <input type="text" id="dep-obs" placeholder="Ex: Economizei esse mês...">
+        </div>
+        <div class="dep-toggle-row">
+          <div>
+            <div class="dep-toggle-label">Mensal</div>
+            <div class="dep-toggle-sub">Não é retroativo</div>
+          </div>
+          <label class="dep-switch">
+            <input type="checkbox" id="dep-mensal">
+            <span class="dep-slider"></span>
+          </label>
+        </div>
+        <button type="button" class="btn cofre-confirm-btn" id="dep-save-btn" style="background:linear-gradient(135deg,#10b981,#059669);margin-top:8px">
+          <i class="bi bi-check-lg"></i> Salvar
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal comparação mensal -->
+    <div id="retroModal" class="cofre-overlay hidden" onclick="if(event.target===this)document.getElementById('retroModal').classList.add('hidden')">
+      <div class="retro-modal-card">
+        <div class="retro-modal-hdr">
+          <div>
+            <div class="retro-modal-title" id="retroModalTitle">Mês</div>
+            <div class="retro-modal-sub" id="retroModalSub"></div>
+          </div>
+          <button class="retro-modal-close" onclick="document.getElementById('retroModal').classList.add('hidden')"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div id="retroScoreWrap"></div>
+        <div class="retro-cmp-table" id="retroCmpTable"></div>
+        <div class="retro-section-lbl" id="retroCatLbl" style="margin-top:16px;display:none">Top categorias</div>
+        <div class="retro-cat-compare" id="retroCatCompare"></div>
+        <div class="retro-insight" id="retroInsight" style="display:none">
+          <i class="bi bi-lightbulb-fill"></i>
+          <span id="retroInsightText"></span>
+        </div>
+        <div class="retro-nota-lbl">Minhas anotações</div>
+        <textarea class="retro-nota-input" id="retroNotaInput" placeholder="O que preciso melhorar? O que funcionou bem este mês?"></textarea>
+        <button class="retro-save-btn" id="retroSaveBtn"><i class="bi bi-check-lg"></i> Salvar anotação</button>
+      </div>
+    </div>
+
+    <!-- Funções globais: editar / excluir conta -->
+    <script src="js/contas-init.js"></script>
+
+    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/retrospectiva.js"></script>
+
+    <script type="module" src="js/categorias.js"></script>
+    <script type="module" src="js/graficos.js"></script>
+    <script type="module" src="js/relatorios.js"></script>
+    <script type="module" src="js/objetivos.js"></script>
+
+    <!-- Barra de navegação inferior (mobile) -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav">
+      <button class="mob-nav-item mob-active" data-mob-view="resumo">
+        <i class="bi bi-house-door-fill"></i>
+        <span>Início</span>
+      </button>
+      <button class="mob-nav-item" data-mob-view="transacoes">
+        <i class="bi bi-list-ul"></i>
+        <span>Transações</span>
+      </button>
+      <div class="mob-nav-add-wrap">
+        <button class="mob-nav-add" id="mobAddBtn">
+          <i class="bi bi-plus-lg"></i>
+        </button>
+      </div>
+      <button class="mob-nav-item" data-mob-view="objetivos">
+        <i class="bi bi-bullseye"></i>
+        <span>Objetivos</span>
+      </button>
+      <button class="mob-nav-item" data-mob-view="graficos">
+        <i class="bi bi-bar-chart-fill"></i>
+        <span>Gráficos</span>
+      </button>
+    </nav>
+
+    <script src="js/mobile.js"></script>
+
+    <!-- ===== MODAL: CONFIRMAÇÃO DE EXCLUSÃO ===== -->
+    <div id="deleteConfirmModal" class="cofre-overlay hidden" style="z-index:10010">
+      <div style="background:#18181b;border:1px solid rgba(239,68,68,0.2);border-radius:20px;max-width:340px;width:90%;padding:32px 24px 24px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.04);animation:modalPop .18s cubic-bezier(.22,1,.36,1)">
+        <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,rgba(239,68,68,0.2),rgba(239,68,68,0.08));border:1.5px solid rgba(239,68,68,0.3);color:#ef4444;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 20px">
+          <i class="bi bi-trash3-fill"></i>
+        </div>
+        <h3 id="delConfirmTitle" style="font-size:1.05rem;font-weight:700;margin-bottom:8px;letter-spacing:-0.01em;color:#fff">Confirmar exclusão</h3>
+        <p id="delConfirmMsg" style="font-size:0.84rem;color:rgba(255,255,255,0.5);margin-bottom:28px;line-height:1.6"></p>
+        <div style="display:flex;gap:10px">
+          <button id="delConfirmCancel" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.75);font-size:0.9rem;font-weight:500;cursor:pointer;transition:background .15s">Cancelar</button>
+          <button id="delConfirmOk" style="flex:1;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(239,68,68,0.35);transition:opacity .15s">Excluir</button>
+        </div>
+      </div>
     </div>
 
 </body>
